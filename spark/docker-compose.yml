@@ -62,4 +62,4 @@ services:
 networks:
   default:
     external:
-      name: build-a-streaming-pipeline_default
+      name: kafka_default

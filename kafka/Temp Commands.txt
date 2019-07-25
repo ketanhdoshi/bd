@@ -1,0 +1,231 @@
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "kdes",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "kdes-topic",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "kdestype"
+  }
+}'
+
+curl -X "PUT" "http://kafka-connect:18083/connectors/kdes/config" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "kdes",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "kdes-topic",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "kdestype"
+  }
+}'
+
+curl -XDELETE 'localhost:18083/connectors/kdes'
+
+{"test_id":"test-1", "description":"my first elasticsearch sink connector with kafka connect"}
+{"test_id":"test-2", "description":"my second elasticsearch sink connector with kafka connect"}
+{"test_id":"test-3", "description":"my third message"}
+{"test_id":"test-4", "description":"my fourth message"}
+{"test_id":"test-3", "description":"my third message duplicated"}
+{"test_id":"test-3", "description":"my third message again"}
+
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "mqtt-source",
+  "config": {
+    "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
+    "tasks.max" : "1",
+    "mqtt.server.uri" : "tcp://mosquitto:1883",
+    "mqtt.topics" : "temperature",
+    "kafka.topic" : "mqtt.temperature",
+    "confluent.topic.bootstrap.servers": "kafka:29092",
+    "confluent.topic.replication.factor": "1"
+  }
+}'
+
+curl -X "PUT" "http://kafka-connect:18083/connectors/mqtt-source/config" \
+     -H "Content-Type: application/json" \
+     -d '{
+    "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
+    "tasks.max" : "1",
+    "mqtt.server.uri" : "tcp://mosquitto:1883",
+    "mqtt.topics" : "temperature",
+    "kafka.topic" : "mqtt.temperature",
+    "confluent.topic.bootstrap.servers": "kafka:29092",
+    "confluent.topic.replication.factor": "1"
+}'
+
+curl -K myconfig.txt -o output.txt
+
+http://localhost:9200/kdes-topic/_search?pretty
+http://localhost:9021/management
+http://localhost:5601
+
+
+D:\dev\confluent\build-a-streaming-pipeline>
+docker-compose up -d
+docker-compose exec ksql-cli bash -c 'ksql http://ksql-server:8088'
+> SHOW TOPICS;
+> CREATE STREAM RATINGS WITH (KAFKA_TOPIC='ratings',VALUE_FORMAT='AVRO');
+> SELECT STARS, CHANNEL, MESSAGE FROM RATINGS;
+> SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+> CREATE STREAM POOR_RATINGS AS
+SELECT STARS, CHANNEL, MESSAGE FROM RATINGS WHERE STARS<3;
+> SELECT * FROM POOR_RATINGS LIMIT 5;
+
+> PRINT 'asgard.demo.CUSTOMERS' FROM BEGINNING;
+
+> SET 'auto.offset.reset' = 'earliest';
+> CREATE STREAM CUSTOMERS_STREAM WITH (KAFKA_TOPIC='asgard.demo.CUSTOMERS', VALUE_FORMAT='AVRO');
+> CREATE STREAM CUSTOMERS_REKEYED WITH (PARTITIONS=1) AS SELECT * FROM CUSTOMERS_STREAM PARTITION BY ID;
+-- This select statement is simply to make sure that we have time for the CUSTOMERS_REKEYED topic
+-- to be created before we define a table against it
+> SELECT * FROM CUSTOMERS_REKEYED LIMIT 1;
+> CREATE TABLE CUSTOMERS WITH (KAFKA_TOPIC='CUSTOMERS_REKEYED',VALUE_FORMAT='AVRO',KEY='ID');
+
+---
+> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
+> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS
+  FROM CUSTOMERS WHERE ID=42;
+> SELECT TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss'), ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS
+  FROM CUSTOMERS_STREAM WHERE ID=42;
+
+---
+> CREATE STREAM RATINGS_WITH_CUSTOMER_DATA
+       WITH (PARTITIONS=1,
+             KAFKA_TOPIC='ratings-enriched')
+       AS
+SELECT R.RATING_ID, R.MESSAGE, R.STARS, R.CHANNEL,
+      C.ID, C.FIRST_NAME + ' ' + C.LAST_NAME AS FULL_NAME,
+      C.CLUB_STATUS, C.EMAIL
+      FROM RATINGS R
+        LEFT JOIN CUSTOMERS C
+        ON R.USER_ID = C.ID
+      WHERE C.FIRST_NAME IS NOT NULL;
+
+---
+> SELECT FULL_NAME, CLUB_STATUS, STARS, MESSAGE, CHANNEL FROM RATINGS_WITH_CUSTOMER_DATA WHERE ID=2;
+
+> CREATE STREAM UNHAPPY_PLATINUM_CUSTOMERS
+       WITH (VALUE_FORMAT='JSON', PARTITIONS=1) AS
+SELECT FULL_NAME, CLUB_STATUS, EMAIL, STARS, MESSAGE
+FROM   RATINGS_WITH_CUSTOMER_DATA
+WHERE  STARS < 3
+  AND  CLUB_STATUS = 'platinum';
+
+select FULL_NAME, count(*) 
+from UNHAPPY_PLATINUM_CUSTOMERS
+group by FULL_NAME;
+
+docker-compose exec mysql bash -c 'mysql -u $MYSQL_USER -p$MYSQL_PASSWORD demo'
+> show tables;
+> SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, CLUB_STATUS FROM CUSTOMERS LIMIT 5;
+> INSERT INTO CUSTOMERS (ID,FIRST_NAME,LAST_NAME) VALUES (42,'Rick','Astley');
+> UPDATE CUSTOMERS SET EMAIL = 'rick@example.com' where ID=42;
+> UPDATE CUSTOMERS SET CLUB_STATUS = 'bronze' where ID=42;
+> UPDATE CUSTOMERS SET CLUB_STATUS = 'platinum' where ID=42;
+--- 
+> UPDATE CUSTOMERS SET first_name = 'Rutlie' WHERE ID=2;
+
+See active Debezium connectors
+http://localhost:8083/connectors
+See all other active connectors
+http://localhost:18083/connectors
+
+Kibana dashboard
+http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInterval:('$$hashKey':'object:229',display:'30%20seconds',pause:!f,section:1,value:30000),time:(from:now-15m,mode:quick,to:now))&_a=(description:'',filters:!(),fullScreenMode:!f,options:(darkTheme:!f,hidePanelTitles:!f,useMargins:!t),panels:!gridData:(h:15,i:'1',w:24,x:0,y:10),id:'0c118530-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'1',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'2',w:48,x:0,y:35),id:'39803a20-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'2',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'4',w:8,x:0,y:0),id:'5ef922e0-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'4',type:visualization,version:'6.3.0'),(gridData:(h:10,i:'5',w:40,x:8,y:0),id:'2f3d2290-6ff0-11e8-8fa0-279444e59a8f',panelIndex:'5',type:search,version:'6.3.0'),(gridData:(h:15,i:'6',w:24,x:24,y:10),id:c6344a70-6ff0-11e8-8fa0-279444e59a8f,panelIndex:'6',type:visualization,version:'6.3.0'),(embeddableConfig:(),gridData:(h:10,i:'7',w:48,x:0,y:25),id:'11a6f6b0-31d5-11e8-a6be-09f3e3eb4b97',panelIndex:'7',sort:!(EXTRACT_TS,desc),type:search,version:'6.3.0',query:(language:lucene,query:''),timeRestore:!f,title:'Ratings%20Data',viewMode:view)
+
+docker-compose exec kafkacat bash
+kafkacat -b kafka:29092 -t "UNHAPPY_PLATINUM_CUSTOMERS" -C
+
+
+
+#------------------------------------------------------------------
+# MQTT
+#------------------------------------------------------------------
+
+# -------------------- INSTALL MQTT CONNECTOR ---------------------
+root@7de234697ebf:/usr/share/java# confluent-hub install confluentinc/kafka-connect-mqtt:1.2.1-preview
+The component can be installed in any of the following Confluent Platform installations:
+  1. / (installed rpm/deb package)
+  2. / (where this tool is installed)
+Choose one of these to continue the installation (1-2): 2
+Do you want to install this into /usr/share/confluent-hub-components? (yN) N
+
+Specify installation directory: /usr/share/java
+
+Component's license:
+Confluent Software Evaluation License
+https://www.confluent.io/software-evaluation-license
+I agree to the software license agreement (yN) y
+
+Downloading component Kafka Connect MQTT 1.2.1-preview, provided by Confluent, Inc. from Confluent Hub and installing into /usr/share/java
+Detected Worker's configs:
+  1. Standard: /etc/kafka/connect-distributed.properties
+  2. Standard: /etc/kafka/connect-standalone.properties
+  3. Standard: /etc/schema-registry/connect-avro-distributed.properties
+  4. Standard: /etc/schema-registry/connect-avro-standalone.properties
+  5. Used by Connect process with PID : /etc/kafka-connect/kafka-connect.properties
+Do you want to update all detected configs? (yN) N
+
+Do you want to update 1? (yN) N
+
+Do you want to update 2? (yN) N
+
+Do you want to update 3? (yN) N
+
+Do you want to update 4? (yN) N
+
+Do you want to update 5? (yN) y
+
+
+Adding installation directory to plugin path in the following files:
+  /etc/kafka-connect/kafka-connect.properties
+
+Completed
+# -------------------- DONE INSTALL MQTT CONNECTOR ---------------------
+
+docker-compose exec mosquitto /bin/sh
+Terminal One >>> mosquitto_sub -h 127.0.0.1 -t dummy
+Terminal Two >>> mosquitto_pub -h 127.0.0.1 -t dummy -m "Hello world"
+
+
+Terminal One >>> mosquitto_sub -h 127.0.0.1 -t temperature
+Terminal Two >>> mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -m "99999,2.10#"
+mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -f /scripts/mqttsensor.json
+mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -m  {\”status\”:\”off\”}
+
+kafka-console-consumer --bootstrap-server kafka:29092 --topic mqtt.temperature --property print.key=true --from-beginning
+sed -i -e '$a log4j.logger.io.confluent.connect.mqtt.MqttSourceTask=TRACE' log4j.properties
+sed -i -e '$a log4j.logger.io.confluent.connect.mqtt.MqttSinkTask=TRACE' log4j.properties
+
+# To delete all messages from a topic
+/var/lib/kafka/data/mqtt.temperature-0# rm *
+
+ksql-datagen schema=/scripts/impressions.avro format=avro topic=kd-impressions key=impressionid maxInterval=7500 \
+         bootstrap-server=kafka:29092 \
+         schemaRegistryUrl=http://schema-registry:8090
+
+kafka-topics.sh --zookeeper zookeeper:2181 --create --topic json_topic --replication-factor 1 --partitions 1
+
+kafka-avro-console-consumer --bootstrap-server kafka:29092 --topic kd-impressions  --from-beginning --property schema.registry.url="http://schema-registry:8090"
+
+kafka-avro-console-producer \
+         --broker-list kafka:29092 --topic test \
+         --property schema.registry.url="http://schema-registry:8090" \
+         --property value.schema='{"type":"record","name":"Person","fields":[{"name":"id","type":"int"},{"name":"firstname","type":"string"},{"name":"middlename","type": "string"},{"name":"lastname","type":"string"},{"name":"dob_year","type":"int"},{"name":"dob_month","type":"int"},{"name":"gender","type":"string"},{"name":"salary","type":"int"}]}'

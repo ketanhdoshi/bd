@@ -1,0 +1,96 @@
+{
+   "namespace": "kd",
+   "name": "nested",
+   "type": "record",
+   "fields": [
+      {"name": "event_time", "type": {
+          "type": "long",
+          "format_as_time" : "unix_long",
+          "arg.properties": {
+             "iteration": { "start": 1, "step": 10}
+          }
+      }},
+      {"name": "register_time", "type": {
+          "type": "long",
+          "arg.properties": {
+             "range": {
+                "min": 1487715775521,
+                "max": 1519273364600
+             }
+          }
+      }},
+      {"name": "start_time_str", "type": {
+          "type": "string",
+          "arg.properties": {
+             "options": [
+                "2016-12-29T00:00:00.000Z",
+                "2016-12-29T18:42:00.000Z",
+                "2016-12-27T00:00:00.000Z",
+                "2016-12-26T00:00:00.000Z",
+                "2016-12-23T00:00:00.000Z",
+                "2016-12-21T00:00:00.000Z",
+                "2016-12-19T00:00:00.000Z",
+                "2016-12-16T00:00:00.000Z"
+             ]
+          }
+      }},
+      {"name": "readings", "type": {
+          "type": "array",
+          "items": "int",
+          "arg.properties": {
+             "options": [
+                [ 1, 3, 7 ],
+                [ 4, 6, 2],
+                [ 9, 8 ],
+                [ 22, 1]
+             ]
+          }
+      }},
+      {"name": "geo", "type": {
+          "type" : "record",
+          "name" : "geoloc",
+          "fields" : [
+             {"name": "lat", "type": "double"},
+             {"name": "long", "type": "double"}
+          ]
+      }},
+      {"name": "source", "type": {
+          "type": "map",
+          "values": "string",
+          "arg.properties": {
+             "options": [
+                {
+                   "igauge": "68.28.91.22",
+                   "ipad": "46"
+                },
+                {
+                   "igauge": "68.28.91.22",
+                   "inest": "46"
+                },
+                {
+                   "istick": "68.28.91.22",
+                   "inest": "46",
+                   "inexus": "82",
+                   "ipad": "82"
+                },
+                {
+                   "istick": "68.28.91.22",
+                   "inest": "46",
+                   "ipad": "46"
+                },
+                {
+                   "inest": "67.185.72.1",
+                   "igauge": "68.28.91.22",
+                   "istick": "64"
+                }
+             ]
+          }
+      }},
+      {"name": "dc_id", "type": {
+          "type": "string",
+          "arg.properties": {
+             "regex": "DC_[1-9]{0,1}"
+          }
+      }}
+   ]
+}
