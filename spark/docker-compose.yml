@@ -1,0 +1,65 @@
+﻿---
+version: '3.3'
+
+services:
+  spark-master:
+    image: kd/spark:latest
+    container_name: spark-master
+    hostname: spark-master
+    ports:
+      - "8095:8095"
+      - "7077:7077"
+    volumes:
+      - $PWD/scripts:/scripts
+      - $PWD/data:/data
+    environment:
+      - "SPARK_LOCAL_IP=spark-master"
+      - "SPARK_MASTER_PORT=7077"
+      - "SPARK_MASTER_WEBUI_PORT=8095"
+    command: "/scripts/run-master.sh"
+
+  spark-worker:
+    image: kd/spark:latest
+    depends_on:
+      - spark-master
+    ports:
+      - 8096
+    volumes:
+      - $PWD/scripts:/scripts
+      - $PWD/data:/data
+    environment:
+      - "SPARK_MASTER=spark://spark-master:7077"
+      - "SPARK_WORKER_WEBUI_PORT=8096"
+    command: "/scripts/run-worker.sh"
+
+  spark-driver:
+    image: kd/spark:latest
+    container_name: spark-driver
+    hostname: spark-driver
+    ports:
+      - "4040:4040"
+    depends_on:
+      - spark-master
+    volumes:
+      - $PWD/scripts:/scripts
+      - $PWD/devp:/devp
+      - $PWD/data:/data
+    environment:
+      - "SPARK_MASTER=spark://spark-master:7077"
+    command: tail -f /dev/null
+
+  sbt:
+    image: kd/sbt:latest
+    container_name: sbt
+    depends_on:
+      - spark-master
+    volumes:
+      - $PWD/devp:/devp
+    environment:
+      - "SPARK_MASTER=spark://spark-master:7077"
+    command: tail -f /dev/null
+
+networks:
+  default:
+    external:
+      name: build-a-streaming-pipeline_default

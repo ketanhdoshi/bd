@@ -1,0 +1,105 @@
+﻿docker build --tag=kd/spark .
+
+docker run --rm -it --name spark-master --hostname spark-master -v D:\Dev\spark\shit:/shit -p 7077:7077 -p 8095:8095 kd/spark:latest bash
+
+/usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip `hostname` --port 7077 --webui-port 8095
+
+/usr/local/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip $SPARK_LOCAL_IP --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT
+
+Get-ChildItem -File "D:\Dev\spark\scripts\run-master.sh" | % { $x = get-content -raw -path $_.fullname; $x -replace [char[]](13),'' | set-content -path $_.fullname }
+
+Get-ChildItem -File "D:\Dev\spark\scripts\run-worker.sh" | % { $x = get-content -raw -path $_.fullname; $x -replace [char[]](13),'' | set-content -path $_.fullname }
+
+docker run --rm -it --network spark_default kd/spark:latest /bin/sh
+
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 --class org.apache.spark.examples.SparkPi /usr/local/spark/examples/jars/spark-examples_2.11-2.4.3.jar 1000
+
+/usr/local/spark/bin/run-example SparkPi 
+
+/usr/local/spark/bin/spark-shell --master spark://spark-master:7077
+
+val textFile = spark.read.textFile("/usr/local/spark/README.md")
+
+http://localhost:8095/
+
+http://localhost:4040/jobs/
+
+# -----------------------
+# OBSOLETE For Scala
+# ------------------------
+
+docker build -t kd/scala-sbt:latest --build-arg SCALA_VERSION=2.12.8 --build-arg SBT_VERSION=1.2.7 sbt
+
+#docker run -it --rm -v D:\Dev\spark:/project kd/scala-sbt:latest
+
+docker run -it --rm -v D:\Dev\spark\devp:/devp kd/scala-sbt:latest
+
+# -----------------------
+# For Scala
+# ------------------------
+
+docker-compose exec sbt bash -c 'cd sentiment; sbt'
+
+docker-compose exec sbt bash -c 'cd kafkaint; sbt'
+
+docker-compose exec sbt bash -c 'cd kafkaavro; sbt'
+
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 --class com.example.KDSimpleApp \
+  /devp/kdsimple/target/scala-2.11/my-first-scala_2.11-1.0.jar \
+  /data/UKSA_Oct_18_-_Transparency_Data.csv
+
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 --class com.ketan.Sentiment \
+  /devp/sentiment/target/scala-2.11/sentiment-analysis_2.11-1.0.jar
+
+# -----------------------
+# For Kafka Integration with Regular Streaming, with Scala
+# ------------------------
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 \
+  --packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.3 \
+  --class com.ketan.KafkaInt \
+  /devp/kafkaint/target/scala-2.11/kafka-integration_2.11-1.0.jar
+
+# -----------------------
+# For Kafka and Confluent Avro Integration with Structure Streaming, with Scala
+# -----------------------
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3,za.co.absa:abris_2.11:2.2.2 \
+  --repositories https://packages.confluent.io/maven \
+  --class com.ketan.KafkaInt \
+  /devp/kafkaint/target/scala-2.11/kafka-integration_2.11-1.0.jar
+
+# -----------------------
+# For Kafka and non-Confluent Spark Avro Integration with Structure Streaming, with Scala
+# -----------------------
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3,org.apache.spark:spark-avro_2.11:2.4.3 \
+  --class com.ketan.KafkaAvro \
+  /devp/kafkaavro/target/scala-2.11/kafka-avro_2.11-1.0.jar
+
+# -----------------------
+# For Python
+# ------------------------
+
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 /usr/local/spark/examples/src/main/python/pi.py
+
+/usr/local/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3 --master spark://spark-master:7077 /devp/pysrc/KDKafkaInt.py
+/usr/local/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3 --master spark://spark-master:7077 /devp/pysrc/KDIot.py
+
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 /devp/pysrc/KDSimpleApp.py 
+/usr/local/spark/bin/spark-submit --master spark://spark-master:7077 /devp/pysrc/KDNestedJson.py
+
+# -----------------------
+# Cmder Startup Tab Settings
+# ------------------------
+
+-cur_console:f -cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:Kafka -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
+
+-cur_console:bs1T50H -cur_console:d:D:\Dev\spark -cur_console:t:Spark -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
+
+> -cur_console:bs2T50V -cur_console:d:D:\Dev\spark -cur_console:t:Sbt -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec sbt bash -c 'cd kafkaint; sbt'"
+
+-cur_console:b -cur_console:d:D:\Dev\spark -cur_console:t:spark-driver -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec spark-driver bash"
+
+-cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:kafkacat -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafkacat bash"
+
+-cur_console:s5T50H -cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:kafka-connect -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafka-connect bash"
