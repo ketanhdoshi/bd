@@ -1,0 +1,11 @@
+﻿---
+version: '2'
+services:
+   mosquitto:
+       image: eclipse-mosquitto
+       hostname: mosquitto
+       container_name: mosquitto
+       expose:
+           - "1883"
+       ports:
+           - "1883:1883"
