@@ -25,6 +25,13 @@ http://localhost:8095/
 http://localhost:4040/jobs/
 
 # -----------------------
+# Set Spark Driver log level to WARN to disable all the messages on the console
+# Execute from /usr/local/spark directory
+# ------------------------
+cp conf/log4j.properties.template conf/log4j.properties
+sed -i -e 's/log4j.rootCategory=INFO/log4j.rootCategory=WARN/g' conf/log4j.properties
+
+# -----------------------
 # OBSOLETE For Scala
 # ------------------------
 
@@ -92,14 +99,14 @@ docker-compose exec sbt bash -c 'cd kafkaavro; sbt'
 # Cmder Startup Tab Settings
 # ------------------------
 
--cur_console:f -cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:Kafka -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
+-cur_console:f -cur_console:d:D:\\Dev\bd\kafka -cur_console:t:Kafka -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
 
--cur_console:bs1T50H -cur_console:d:D:\Dev\spark -cur_console:t:Spark -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
+-cur_console:bs1T50H -cur_console:d:D:\Dev\bd\spark -cur_console:t:Spark -cur_console:C:D:\Tools\Cmder\icons\cmder.ico cmd /k ""%ConEmuDir%\..\init.bat" & docker-compose ps"
 
-> -cur_console:bs2T50V -cur_console:d:D:\Dev\spark -cur_console:t:Sbt -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec sbt bash -c 'cd kafkaint; sbt'"
+> -cur_console:bs2T50V -cur_console:d:D:\Dev\bd\spark -cur_console:t:Sbt -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec sbt bash -c 'cd kafkaint; sbt'"
 
--cur_console:b -cur_console:d:D:\Dev\spark -cur_console:t:spark-driver -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec spark-driver bash"
+-cur_console:b -cur_console:d:D:\Dev\bd\spark -cur_console:t:spark-driver -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1'''; docker-compose exec spark-driver bash"
 
--cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:kafkacat -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafkacat bash"
+-cur_console:d:D:\\Dev\bd\kafka -cur_console:t:kafkacat -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafkacat bash"
 
--cur_console:s5T50H -cur_console:d:D:\Dev\confluent\build-a-streaming-pipeline -cur_console:t:kafka-connect -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafka-connect bash"
+-cur_console:s5T50H -cur_console:d:D:\\Dev\bd\kafka -cur_console:t:kafka-connect -cur_console:C:D:\Tools\Cmder\icons\cmder.ico PowerShell -ExecutionPolicy Bypass -NoLogo -NoProfile -NoExit -Command "Invoke-Expression 'Import-Module ''%ConEmuDir%\..\profile.ps1''' ; docker-compose exec kafka-connect bash"

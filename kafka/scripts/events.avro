@@ -1,0 +1,58 @@
+{
+    "namespace": "demo",
+    "name": "events",
+    "type": "record",
+    "fields": [
+        {"name": "event_time", "type": {
+            "type": "long",
+            "format_as_time" : "unix_long",
+            "arg.properties": {
+                "iteration": { "start": 1, "step": 10}
+            }
+        }},
+        {"name": "customer_id", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {"min": 1, "max": 20}
+            }
+        }},
+        {"name": "device_id", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {"min": 1, "max": 5000}
+            }
+        }},
+        {"name": "event_loc", "type": {
+            "type" : "record",
+            "name" : "geoloc",
+            "fields" : [
+                {"name": "lat", "type": "double"},
+                {"name": "lon", "type": "double"}
+            ],
+            "arg.properties": {
+                "options": [
+                    {
+                        "lat": 50.75,
+                        "lon": -37.22
+                    },
+                    {
+                        "lat": 40.11,
+                        "lon": 22.44
+                    }
+                ]
+            }
+        }},
+        {"name": "event_type", "type": {
+            "type": "string",
+            "arg.properties": {
+                "regex": "type_[1-9]?"
+            }
+        }},
+        {"name": "event_amount", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {"min": 5, "max": 499}
+            }
+        }}
+    ]
+}

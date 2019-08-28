@@ -1,0 +1,27 @@
+spark/spark-2.4.3-bin-hadoop2.7.tgz
+spark/BAK spark-2.4.3-bin-hadoop2.7.tgz
+spark/data/
+spark/OLD bigspark/
+spark/devp/*/project/
+spark/devp/*/target/
+spark/devp/kafkaavro/src/main/scala/OLD KafkaAvro.scala.txt
+spark/devp/kafkaint/src/main/scala/TEMP KIScala
+spark/Untitled-1.txt
+kafka/plugins/
+kafka/scripts/TEMP fileNestedJsonInsert.txt
+kafka/scripts/TEMP fileNestedJsonMain.txt
+kafka/scripts/colour.avro
+kafka/docker-compose.yml.bak
+kafka/devp/kdtry/
+kafka/devp/kdapp/
+kafka/devp/kdcustom/
+kafka/devp/kdtest/bin/
+kafka/devp/kdtest/.settings/
+kafka/devp/kdtest/config/
+kafka/devp/kdtest/target/
+kafka/devp/kdtest/src/test/
+kafka/devp/kdtest/src/main/resources/
+kafka/devp/kdtest/.classpath
+kafka/devp/kdtest/.project
+kafka/devp/kdtest/README.md
+kafka/devp/kdtest/docker-compose.yml

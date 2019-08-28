@@ -70,11 +70,45 @@ curl -X "PUT" "http://kafka-connect:18083/connectors/mqtt-source/config" \
     "confluent.topic.replication.factor": "1"
 }'
 
+curl -X "POST" "http://kafka-connect:18083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "kdtest",
+  "config": {
+    "connector.class" : "com.kd.ctest.MySourceConnector",
+    "tasks.max" : "1",
+    "api.url": "http://junk.com:8080",
+    "topic": "kdstruct_topic",
+    "sleep.seconds": 5
+  }
+}'
+----- Maven compile custom connector
+cmd /c "D:\Tools\maven\bin\mvn.cmd" package -f "d:\Dev\bd\kafka\devp\kdtest\foo.xml"
+
+curl -X "GET" "http://kafka-connect:18083/connector-plugins/"
+curl -X "DELETE" "http://kafka-connect:18083/connectors/kdtest"
+
+# ---------- mockaroo data ---------------------------
+curl -H "X-API-Key: b40f55f0" https://my.api.mockaroo.com/events
+curl "https://api.mockaroo.com/api/00dc0960?count=3&key=b40f55f0" > "Events.json"
+
+# Feed one line at a time with a gap of 2 seconds, works for JSON
+curl "https://api.mockaroo.com/api/00dc0960?count=5&key=b40f55f0" \
+  | split -l 1 --filter="kafka-console-producer --broker-list kafka:29092 --topic kdlong_topic; sleep 2"\
+  > /dev/null
+
+# Feed one line at a time with a gap of one second
+# NB: Have to save the schema for CSV data, not JSON
+curl -H "X-API-Key: b40f55f0" https://my.api.mockaroo.com/events \
+  | awk '{print $0; system("sleep 1");}' \
+  | kafka-console-producer --broker-list kafka:29092 --topic kdlong_topic
+
 curl -K myconfig.txt -o output.txt
 
-http://localhost:9200/kdes-topic/_search?pretty
-http://localhost:9021/management
-http://localhost:5601
+ElasticSearch - http://localhost:9200/kdes-topic/_search?pretty
+Control Centre - http://localhost:9021/management
+Kibana - http://localhost:5601
+KSQL - http://localhost:8088/info
 
 
 D:\dev\confluent\build-a-streaming-pipeline>
@@ -153,7 +187,7 @@ http://localhost:5601/app/kibana#/dashboard/mysql-ksql-kafka-es?_g=(refreshInter
 docker-compose exec kafkacat bash
 kafkacat -b kafka:29092 -t "UNHAPPY_PLATINUM_CUSTOMERS" -C
 
-
+docker-compose logs kafka-connect 2>&1 >kdcc.log
 
 #------------------------------------------------------------------
 # MQTT
@@ -208,7 +242,7 @@ Terminal Two >>> mosquitto_pub -h 127.0.0.1 -t dummy -m "Hello world"
 Terminal One >>> mosquitto_sub -h 127.0.0.1 -t temperature
 Terminal Two >>> mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -m "99999,2.10#"
 mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -f /scripts/mqttsensor.json
-mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -m  {\”status\”:\”off\”}
+mosquitto_pub -h 127.0.0.1 -p 1883 -t temperature -q 2 -m  {\ï¿½status\ï¿½:\ï¿½off\ï¿½}
 
 kafka-console-consumer --bootstrap-server kafka:29092 --topic mqtt.temperature --property print.key=true --from-beginning
 sed -i -e '$a log4j.logger.io.confluent.connect.mqtt.MqttSourceTask=TRACE' log4j.properties

@@ -58,31 +58,31 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
- "name": "kdes",
+ "name": "demo-es-sink",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "tasks.max": "1",
-    "topics": "kdes-topic",
+    "topics": "demo-es",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter.schemas.enable": "false",
     "key.ignore": "true",
     "schema.ignore": "true",
     "connection.url": "http://elasticsearch:9200",
-    "type.name": "kdestype"
+    "type.name": "demoestype"
   }
 }'
 
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
- "name": "mqtt-source",
+ "name": "demo-mqtt-source",
   "config": {
     "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
     "tasks.max" : "1",
     "mqtt.server.uri" : "tcp://mosquitto:1883",
-    "mqtt.topics" : "temperature",
-    "kafka.topic" : "mqtt.temperature",
+    "mqtt.topics" : "mqtt-iot",
+    "kafka.topic" : "demo-iot",
     "confluent.topic.bootstrap.servers": "kafka:29092",
     "confluent.topic.replication.factor": "1",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
@@ -95,54 +95,38 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
- "name": "kd-file",
+ "name": "test-file-source",
   "config": {
     "connector.class": "FileStreamSource",
     "tasks.max": "1",
-    "file": "/scripts/fileConnectTest.txt",
-    "topic": "kd-file-topic"
+    "file": "/scripts/fileConnectSource.txt",
+    "topic": "test-file"
   }
 }'
 
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
- "name": "kd-file-sink",
+ "name": "test-file-sink",
   "config": {
     "connector.class": "FileStreamSink",
     "tasks.max": "1",
     "file": "/scripts/fileConnectSink.txt",
-    "topics": "kd-file-topic"
+    "topics": "test-file"
   }
 }'
 
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
      -d '{
- "name": "kd-file-source-string",
+ "name": "test-file-source-string",
   "config": {
     "connector.class": "FileStreamSource",
     "tasks.max": "1",
     "file": "/scripts/fileConnectString.txt",
-    "topic": "kd-file-string-topic",
+    "topic": "test-file-string",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "key.converter.schemas.enable": "false",
-    "value.converter.schemas.enable": "false"
-  }
-}'
-
-curl -X "POST" "http://kafka-connect:18083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
- "name": "kd-file-source-json",
-  "config": {
-    "connector.class": "FileStreamSource",
-    "tasks.max": "1",
-    "file": "/scripts/fileConnectJson.txt",
-    "topic": "kd-file-json-topic",
-    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "key.converter.schemas.enable": "false",
     "value.converter.schemas.enable": "false"
   }
