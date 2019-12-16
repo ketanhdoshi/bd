@@ -1,0 +1,16 @@
+nirav savla 
+9029909075
+
+01031530000856 
+
+kubectl get crd -n operator
+
+ kubectl get kafka -n operator
+
+cc-operator-6b69d765dc-d9gjz
+
+kubectl -n operator patch serviceaccount default --patch $(cat patch.json)
+
+kubectl replace serviceaccount default -n operator -f ./sa.yaml
+
+kafka.enabled=true,global.injectPullSecret=true

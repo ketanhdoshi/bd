@@ -1,0 +1,7 @@
+{
+    "imagePullSecrets": [
+      {
+        "name": "confluent-docker-registry"
+      }
+    ]
+}

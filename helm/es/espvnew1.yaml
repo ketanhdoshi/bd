@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kdesnew1-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: hostpath
+  capacity:
+    storage: 4Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/host_mnt/c/Users/ketan_doshi/.docker/Volumes/kdesnew1"
