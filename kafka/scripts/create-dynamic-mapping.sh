@@ -30,3 +30,4 @@ curl -XPUT "http://elasticsearch:9200/_template/kafkaconnect/" -H 'Content-Type:
     }
   }
 }'
+

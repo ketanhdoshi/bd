@@ -29,7 +29,7 @@ services:
     ports:
       - "1883:1883"
     volumes:
-     - $PWD/scripts:/scripts
+     - ./scripts:/scripts
      - mosquitto-logs:/mosquitto/log
      - mosquitto-data:/mosquitto/data
 
@@ -136,8 +136,8 @@ services:
       # CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       # CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.2.1.jar
     volumes:
-      - $PWD/scripts:/scripts
-      - $PWD/plugins:/usr/share/plugins
+      - ./scripts:/scripts
+      - ./plugins:/usr/share/plugins
       - connect-jars:/etc/kafka-connect/jars
       - connect-secrets:/etc/kafka-connect/secrets
       - connect-kafka-data:/var/lib/kafka/data
@@ -193,7 +193,7 @@ services:
     depends_on:
       - ksql-server
     volumes:
-     - $PWD/scripts:/scripts
+     - ./scripts:/scripts
     tty: true
     # *** TODO Remove this
     # entrypoint: /bin/sh
@@ -272,7 +272,7 @@ services:
       - kafka
       - schema-registry
     volumes:
-     - $PWD/scripts:/scripts
+     - ./scripts:/scripts
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
                        cub kafka-ready -b kafka:29092 1 300 && \
                        echo Waiting for Confluent Schema Registry to be ready... && \
@@ -331,7 +331,7 @@ services:
       CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8090
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8090
     volumes:
-     - $PWD/scripts:/scripts
+     - ./scripts:/scripts
      - debezium-logs:/kafka/logs
      - debezium-config:/kafka/config
      - debezium-data:/kafka/data
@@ -360,10 +360,12 @@ services:
     ports:
       - 9200:9200
     environment:
+      discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
     volumes:
-     - ${PWD}/scripts:/scripts
+    # - ${PWD}/scripts:/scripts
+      - ./scripts:/scripts
     command: 
       - bash 
       - -c 
@@ -431,4 +433,4 @@ services:
 
         sleep infinity
     volumes:
-     - $PWD/scripts:/scripts
+     - ./scripts:/scripts
