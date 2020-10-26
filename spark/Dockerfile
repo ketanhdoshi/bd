@@ -10,7 +10,7 @@ ENV SPARK_EXTRACT_DIR spark-2.4.3-bin-hadoop2.7
 ENV SPARK_TGZ $SPARK_EXTRACT_DIR.tgz
 
 # Download Spark tarfile
-#RUN curl -s http://mirrors.estointernet.in/apache/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
+#RUN curl -s https://archive.apache.org/dist/spark/spark-2.4.3/spark-2.4.3-bin-hadoop2.7.tgz
 
 # Copy the Spark tarfile
 COPY ./$SPARK_TGZ /

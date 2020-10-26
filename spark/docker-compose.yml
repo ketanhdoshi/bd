@@ -10,8 +10,8 @@ services:
       - "8095:8095"
       - "7077:7077"
     volumes:
-      - $PWD/scripts:/scripts
-      - $PWD/data:/data
+      - ./scripts:/scripts
+      - ./data:/data
     environment:
       - "SPARK_LOCAL_IP=spark-master"
       - "SPARK_MASTER_PORT=7077"
@@ -25,8 +25,8 @@ services:
     ports:
       - 8096
     volumes:
-      - $PWD/scripts:/scripts
-      - $PWD/data:/data
+      - ./scripts:/scripts
+      - ./data:/data
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_WORKER_WEBUI_PORT=8096"
@@ -41,9 +41,9 @@ services:
     depends_on:
       - spark-master
     volumes:
-      - $PWD/scripts:/scripts
-      - $PWD/devp:/devp
-      - $PWD/data:/data
+      - ./scripts:/scripts
+      - ./devp:/devp
+      - ./data:/data
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
     command: tail -f /dev/null
@@ -54,7 +54,7 @@ services:
     depends_on:
       - spark-master
     volumes:
-      - $PWD/devp:/devp
+      - ./devp:/devp
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
     command: tail -f /dev/null

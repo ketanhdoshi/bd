@@ -42,6 +42,7 @@ curl -XDELETE 'localhost:18083/connectors/kdes'
 {"test_id":"test-4", "description":"my fourth message"}
 {"test_id":"test-3", "description":"my third message duplicated"}
 {"test_id":"test-3", "description":"my third message again"}
+{"test_id":"test-10", "test-type": "green", "test-val": 9, "description":"my tenth message"}
 
 curl -X "POST" "http://kafka-connect:18083/connectors/" \
      -H "Content-Type: application/json" \
