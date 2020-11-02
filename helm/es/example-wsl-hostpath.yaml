@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ExampleProject
+  labels:
+    app: ExampleProject
+spec:
+      volumes:
+        - name: example-volume
+          hostPath:
+            # path: 'E:\ExampleProject\config.js' THIS commented line was working in old DockerDesktopForWindows before I move to WSL2. It mounts my Windows file to the K8S pod. But failed after enabling WSL2.
+            path: '/run/desktop/mnt/host/wsl/k8s-mount/ExampleProject/config.js'
+            type: File
+      containers:
+        - image: example-image
+          name: example-name
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: example-volume
+              mountPath: "/usr/share/nginx/html/config.js"

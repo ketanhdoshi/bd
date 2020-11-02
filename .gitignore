@@ -25,3 +25,6 @@ kafka/devp/kdtest/.classpath
 kafka/devp/kdtest/.project
 kafka/devp/kdtest/README.md
 kafka/devp/kdtest/docker-compose.yml
+volumes/
+helm/confluent/
+nodes/

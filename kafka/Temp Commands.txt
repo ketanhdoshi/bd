@@ -84,7 +84,7 @@ curl -X "POST" "http://kafka-connect:18083/connectors/" \
   }
 }'
 ----- Maven compile custom connector
-cmd /c "D:\Tools\maven\bin\mvn.cmd" package -f "d:\Dev\bd\kafka\devp\kdtest\foo.xml"
+cmd /c "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\kd\Dev\bd\kafka\devp\kdtest\foo.xml"
 
 curl -X "GET" "http://kafka-connect:18083/connector-plugins/"
 curl -X "DELETE" "http://kafka-connect:18083/connectors/kdtest"

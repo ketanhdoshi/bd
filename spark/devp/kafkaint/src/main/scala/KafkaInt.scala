@@ -758,11 +758,11 @@ class StreamsApp(spark: SparkSession, brokers: String, schemaRegistryUrl: String
     // the same??
     // ***** TODO - Make sure we get output for both the Avro and Json Streaming Queries
 
-    //doAvro()
+    doAvro()
     //doJson()
     //doNestedJson()
     //doBatch()
-    doStreaming()
+    //doStreaming()
 
     // Read a Kafka Avro stream and write it out to a Kafka JSON stream so that it can
     // be ingested by ElasticSearch for a Kibana dashboard

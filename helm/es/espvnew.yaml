@@ -11,4 +11,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/host_mnt/c/Users/ketan_doshi/.docker/Volumes/kdesnew"
+    path: "/host_mnt/c/kd/dev/bd"

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "mychart.fullname" . }}
+  name: {{ include "kdchart.fullname" . }}
   labels:
-{{ include "mychart.labels" . | indent 4 }}
+    {{- include "kdchart.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,5 +12,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app.kubernetes.io/name: {{ include "mychart.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "kdchart.selectorLabels" . | nindent 4 }}
