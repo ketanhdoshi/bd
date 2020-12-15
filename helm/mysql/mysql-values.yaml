@@ -1,0 +1,22 @@
+## Overriding values for Chart's values.yaml
+
+persistence:
+  size: 100M
+  storageClass: "local-storage"
+
+configurationFiles:
+  mysql.cnf: |-
+    [mysqld]
+    server-id         = 223344
+    log_bin           = mysql-bin
+    binlog_format     = row
+    binlog_row_image  = full
+    expire_logs_days  = 10
+
+# Delay before liveness probe is initiated
+livenessProbe:
+  initialDelaySeconds: 120
+
+# Delay before readiness probe is initiated
+readinessProbe:
+  initialDelaySeconds: 60

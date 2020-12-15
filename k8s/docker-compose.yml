@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+    web:
+        image: dockerdemos/lab-web
+        ports:
+            - "33000:80"
+    words:
+        image: dockerdemos/lab-words
+        deploy:
+            replicas: 3
+            endpoint_mode: dnsrr
+    db:
+        image: dockerdemos/lab-db

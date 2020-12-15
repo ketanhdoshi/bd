@@ -14,6 +14,8 @@ global:
       credential:
         required: false
   storageClassName: local-storage
+  telemetry:
+    enabled: false
   sasl:
     plain:
       username: test
@@ -56,6 +58,11 @@ kafka:
     requests:
       cpu: 200m
       memory: 512Mi
+  #### For nodePort based external access
+  nodePort:
+    enabled: false
+    ## [Required] Host is used to configure Kafka's external listener
+    host: ""
   loadBalancer:
     enabled: false
     domain: ""
@@ -65,18 +72,30 @@ kafka:
     privkey: |-
     cacerts: |-
   metricReporter:
-    enabled: false
+    enabled: true
+    bootstrapEndpoint: kafka:9071
   ## Volume size
   volume:
     data0: 200Mi
   ## JVM configuration
   jvmConfig:
     heapSize: 512M
- 
+  configOverrides:
+    server:
+    - auto.create.topics.enable=true
+    - confluent.reporters.telemetry.auto.enable=false
+    - confluent.support.metrics.enable=false
+    - confluent.license.topic.replication.factor=1
+  ##  log4j:
+  ##  - log4j.rootLogger=DEBUG, stdout
+
 ## Connect Cluster
 ##
 connect:
   name: connectors
+  image:
+    repository: kd/kafkaconnect
+    tag: latest
   replicas: 1
   resources:
     requests:
@@ -181,9 +200,9 @@ ksql:
     kafka:
       brokerCount: 1
       bootstrapEndpoint: kafka:9071
-      brokerEndpoints: kafka-0.kafka:9071,kafka-1.kafka:9071,kafka-2.kafka:9071
+      brokerEndpoints: kafka-0.kafka:9071
     schemaRegistry:
-      enabled: false
+      enabled: true
       tls:
         enabled: false
         authentication:

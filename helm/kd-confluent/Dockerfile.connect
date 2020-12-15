@@ -1,0 +1,9 @@
+FROM confluentinc/cp-server-connect-operator:6.0.0.0
+USER root
+RUN  confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
+RUN  confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
+RUN  confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+RUN  confluent-hub install --no-prompt confluentinc/kafka-connect-mqtt:latest
+COPY ./kafka/devp/kdconnector/target/components/packages/kdoshi-myconnect-1.0-SNAPSHOT.zip /tmp/kdconnector-1.0.0.zip
+RUN confluent-hub install --no-prompt /tmp/kdconnector-1.0.0.zip
+USER 1001

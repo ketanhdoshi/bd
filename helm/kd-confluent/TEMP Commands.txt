@@ -1,0 +1,177 @@
+# K8s dashboard and token
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | sls admin-user | ForEach-Object { $_ -Split '\s+' } | Select -First 1)
+
+# Confluent Control Center port forward and UI
+kubectl port-forward pod/controlcenter-0  9021:9021 -n kd-confluent
+http://localhost:9021
+
+# Kibana port forward and UI
+kubectl port-forward svc/kibana-kibana 5601
+http://localhost:5601
+
+# Get logs from Connector container
+docker logs ca2f91465bc1c7384a14e9ef2dc1a44a892ec013ba0d241b1af27d1a0e823f50 2>&1 >kdccc.log
+docker logs 9222af9ad2a61522b8fb3563ee5a3d713d13e612611ab956b998d30d86aff7cd 2>&1 >kdkfk.log
+
+
+# Kafkacat list topics, produce and consume messages
+kafkacat -b kafka:9071 -L -F kafka.properties
+kafkacat -b kafka:9071 -t qe -P -F kafka.properties
+kafkacat -b kafka:9071 -t qe -C -F kafka.properties
+
+# On Mosquitto container - publish and consume messages
+mosquitto_pub -h kd-mosquitto -t temperature -m "good morning"
+mosquitto_sub -h kd-mosquitto -t temperature -C 5
+
+# Configure Datagen connector
+curl -X "POST" "http://connectors:8083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "kdgens",
+  "config": {
+    "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    "kafka.topic": "users",
+    "quickstart": "users",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "max.interval": 300000,
+    "iterations": 500,
+    "tasks.max": "1"
+  }
+}'
+
+cat << EOF > kafka.properties
+bootstrap.servers=kafka:9071
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";
+sasl.mechanism=PLAIN
+security.protocol=SASL_PLAINTEXT
+EOF
+
+curl -X "POST" "http://connectors:8083/connectors/" \
+    -H "Content-Type: application/json" \
+    -d '{
+              "name": "kddeb",
+              "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "tasks.max": "1",
+        "database.hostname": "kd-mysql.default.svc.cluster.local",
+        "database.port": "3306",
+        "database.user": "mysqluser",
+        "database.password": "mysqlpw",
+        "database.server.id": "223344",
+        "database.server.name": "kdserver1",
+        "database.include.list": "kddb",
+        "database.history.kafka.bootstrap.servers": "kafka:9071",
+        "database.history.kafka.topic": "mysql.kddb",
+        "include.schema.changes": "false",
+        "database.history.consumer.security.protocol": "SASL_PLAINTEXT",
+        "database.history.consumer.sasl.mechanism": "PLAIN",
+        "database.history.consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";",
+        "database.history.producer.security.protocol": "SASL_PLAINTEXT",
+        "database.history.producer.sasl.mechanism": "PLAIN",
+        "database.history.producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+       }
+}'
+
+curl -X "POST" "http://connectors:8083/connectors/" \
+    -H "Content-Type: application/json" \
+    -d '{
+  "name": "kdes",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "transforms": "TimestampConverter",
+    "topics": "users",
+    "transforms.TimestampConverter.type": "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+    "transforms.TimestampConverter.target.type": "string",
+    "transforms.TimestampConverter.field": "registertime",
+    "transforms.TimestampConverter.format": "yyyy-MM-dd HH:mm:ss",
+    "connection.url": "http://elasticsearch-master.default.svc.cluster.local:9200",
+    "type.name": "_doc",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "value.converter.schemas.enable": "false"
+    }
+   }'
+
+curl -X "POST" "http://connectors:8083/connectors/" \
+    -H "Content-Type: application/json" \
+    -d '{
+  "name": "kdmqtt",
+  "config": {
+    "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
+    "tasks.max" : "1",
+    "mqtt.server.uri" : "tcp://kd-mosquitto.default.svc.cluster.local:1883",
+    "mqtt.topics" : "temperature",
+    "kafka.topic" : "mqtt.temperature",
+    "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+    "confluent.topic.bootstrap.servers": "kafka:9071",
+    "confluent.topic.security.protocol": "SASL_PLAINTEXT",
+    "confluent.topic.sasl.mechanism": "PLAIN",
+    "confluent.topic.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+  }
+}'
+
+curl -X "POST" "http://connectors:8083/connectors/" \
+     -H "Content-Type: application/json" \
+     -d '{
+ "name": "kdcust",
+  "config": {
+    "connector.class" : "com.kd.kdc.MySourceConnector",
+    "tasks.max" : "1",
+    "api.url": "http://junk.com:8080",
+    "topic": "kdcust_topic",
+    "sleep.seconds": 5
+  }
+}'
+
+# Remove connector
+curl -XDELETE 'http://connectors:8083/connectors/kdgens'
+
+# Custom Connector
+mvn archetype:generate \
+    -DarchetypeGroupId=com.github.jcustenborder.kafka.connect \
+    -DarchetypeArtifactId=kafka-connect-quickstart \
+    -DarchetypeVersion=2.4.0 \
+    -Dpackage=com.kd.kdc \
+    -DgroupId=com.kd \
+    -DartifactId=kdconnector \
+    -DpackageName=com.kd.kdc \
+    -Dversion=1.0-SNAPSHOT
+
+# Use VSCode Maven extension - From Command prompt, maven: Update Archetype catalog and then maven: Create New Project.
+# Then select "More..." for remote archetypes and look for kafka-connect-quickstart from jcustenborder
+C:\KD\Dev\bd\kafka\devp> & "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" \
+    org.apache.maven.plugins:maven-archetype-plugin:3.1.2:generate \
+    -DarchetypeArtifactId="kafka-connect-quickstart" \
+    -DarchetypeGroupId="com.github.jcustenborder.kafka.connect" \
+    -DarchetypeVersion="2.4.0"
+Define value for property 'groupId': com.kd
+Define value for property 'artifactId': kdconnector
+Define value for property 'version' 1.0-SNAPSHOT: : 
+Define value for property 'package' com.kd: : com.kd.kdc
+
+[INFO] Parameter: basedir, Value: C:\KD\Dev\bd\kafka\devp
+[INFO] Parameter: package, Value: com.kd.kdc
+[INFO] Parameter: groupId, Value: com.kd
+[INFO] Parameter: artifactId, Value: kdconnector
+[INFO] Parameter: packageName, Value: com.kd.kdc
+[INFO] Parameter: version, Value: 1.0-SNAPSHOT
+[INFO] project created from Old (1.x) Archetype in dir: C:\KD\Dev\bd\kafka\devp\kdconnector
+
+# Create Package with Effective POM
+"C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" help:effective-pom -f "c:\KD\Dev\bd\kafka\devp\kdconnector\pom.xml" >kafka\devp\kdconnector\effective.xml
+"C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\KD\Dev\bd\kafka\devp\kdconnector\effective.xml"
+
+# Build Docker Connect image (with custom connector)
+C:\KD\Dev\bd> docker build --tag=kd/kafkaconnect . -f .\helm\kd-confluent\Dockerfile.connect
+
+# Maven builds
+"C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" clean -f "c:\KD\Dev\bd\kafka\devp\kdtest\pom.xml"
+cmd /c "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\kd\Dev\bd\kafka\devp\kdtest\foo.xml"
+
+# OBSOLETE - Build Docker Connect image (with custom connector)
+ C:\KD\Dev\bd> docker build --tag=kd/kafkaconnectry -f helm/kd-confluent/Dockerfile.connect .

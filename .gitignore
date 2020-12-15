@@ -28,3 +28,9 @@ kafka/devp/kdtest/docker-compose.yml
 volumes/
 helm/confluent/
 nodes/
+helm/kdtodo-0.1.0.tgz
+kafka/devp/kdconnector/docker-compose.yml
+kafka/devp/kdconnector/config/
+kafka/devp/kdconnector/bin/
+kafka/devp/kdconnector/src/test/
+kafka/devp/kdconnector/target/
