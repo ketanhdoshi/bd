@@ -1,3 +1,20 @@
+# This is how we can create Kafka Client Pods to access the Kafka cluster
+#
+# The Secret object named kafka-client.properties will be located on the 
+# Pod in the file location /etc/kafka-client-properties/kafka-client.properties
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kafka-client.properties
+type: Opaque
+stringData:
+  kafka-client.properties: |-
+    bootstrap.servers=kafka:9071
+    sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";
+    sasl.mechanism=PLAIN
+    security.protocol=SASL_PLAINTEXT
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -16,3 +33,10 @@ spec:
           image: confluentinc/cp-kafkacat
           command: ["/bin/sh"]
           args: ["-c", "trap : TERM INT; sleep infinity & wait"]
+          volumeMounts:
+          - name: kafka-client-properties
+            mountPath: /etc/kafka-client-properties/
+      volumes:
+      - name: kafka-client-properties
+        secret:
+          secretName: kafka-client.properties

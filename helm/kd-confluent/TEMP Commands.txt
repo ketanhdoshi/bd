@@ -11,14 +11,19 @@ kubectl port-forward svc/kibana-kibana 5601
 http://localhost:5601
 
 # Get logs from Connector container
-docker logs ca2f91465bc1c7384a14e9ef2dc1a44a892ec013ba0d241b1af27d1a0e823f50 2>&1 >kdccc.log
-docker logs 9222af9ad2a61522b8fb3563ee5a3d713d13e612611ab956b998d30d86aff7cd 2>&1 >kdkfk.log
+docker logs c919509dc787d0a0e8a585fcfdc909cc670e3d1988f9a9421a41a7f24a5f71ec 2>&1 >kdccc.log
+docker logs 1ad1de2bec4351c192abf3e52f6899cc6b4cd59a2fad539cb6fbd6950bb08303 2>&1 >kdkfk.log
 
+# Internal Kafkacat list topics, produce and consume messages
+kafkacat -b kafka:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
+kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
+kafkacat -b kafka:9071 -t qe -C -F /etc/kafka-client-properties/kafka-client.properties
 
-# Kafkacat list topics, produce and consume messages
-kafkacat -b kafka:9071 -L -F kafka.properties
-kafkacat -b kafka:9071 -t qe -P -F kafka.properties
-kafkacat -b kafka:9071 -t qe -C -F kafka.properties
+# Produce with key. So input <key>:<value>
+kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
+
+# External Kafkacat
+kafkacat -b 192.168.65.3:30220 -L -F kafka.properties
 
 # On Mosquitto container - publish and consume messages
 mosquitto_pub -h kd-mosquitto -t temperature -m "good morning"
@@ -42,8 +47,17 @@ curl -X "POST" "http://connectors:8083/connectors/" \
   }
 }'
 
+# Properties file for internal client access from within K8s cluster
 cat << EOF > kafka.properties
 bootstrap.servers=kafka:9071
+sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";
+sasl.mechanism=PLAIN
+security.protocol=SASL_PLAINTEXT
+EOF
+
+# Properties file for external client access from a Docker container outside K8s cluster
+cat << EOF > kafka.properties
+bootstrap.servers=192.168.65.3:30220
 sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";
 sasl.mechanism=PLAIN
 security.protocol=SASL_PLAINTEXT
@@ -128,8 +142,33 @@ curl -X "POST" "http://connectors:8083/connectors/" \
   }
 }'
 
-# Remove connector
+# Remove connector from K8s Kafka Connect
 curl -XDELETE 'http://connectors:8083/connectors/kdgens'
+
+# Install Custom Weather plugin on Dev Kafka Connect
+confluent-hub install --no-prompt /kdweather/target/components/packages/kdoshi-myweather-1.0-SNAPSHOT.zip
+
+# Create Custom Weather Connector on Dev Kafka Connect
+curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/kd-weather-01/config \
+            -d '{
+                  "connector.class" : "com.kd.kdw.MySourceConnector",
+                  "tasks.max" : "1",
+                  "key.converter": "com.kd.kdw.MyConverter",
+                  "value.converter": "com.kd.kdw.MyConverter",
+                  "cities": "Ireland, Peru, Brazil, Argentina, Chile",
+                  "topic": "kdweather_topic",
+                  "sleep.seconds": 60,
+                  "transforms": "insertcurrenttime",
+                  "transforms.insertcurrenttime.type": "com.kd.kdw.InsertCurrentTime$Value",
+                  "transforms.insertcurrenttime.ct.field.name": "kdct"
+        }'
+
+# To format the Weather Connector messages as Json, add this to the config above
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+
+# Get connectors from Dev Kafka Connect
+curl -X GET  http://localhost:8083/connectors/
 
 # Custom Connector
 mvn archetype:generate \
@@ -175,3 +214,12 @@ cmd /c "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\kd\Dev\bd\kafka\devp
 
 # OBSOLETE - Build Docker Connect image (with custom connector)
  C:\KD\Dev\bd> docker build --tag=kd/kafkaconnectry -f helm/kd-confluent/Dockerfile.connect .
+
+ [root@a31217f048be /]# ls /opt/java/openjdk/lib
+classlist  jli           libattach.so        libdt_socket.so    libinstrument.so  libjaas.so      libjdwp.so    liblcms.so              libmlib_image.so  librmi.so           libsunec.so   modules               server
+ct.sym     jrt-fs.jar    libawt_headless.so  libextnet.so       libj2gss.so       libjavajpeg.so  libjimage.so  libmanagement_agent.so  libnet.so         libsaproc.so        libunpack.so  psfontj2d.properties  src.zip  
+jexec      jspawnhelper  libawt.so           libfontmanager.so  libj2pcsc.so      libjava.so      libjsig.so    libmanagement_ext.so    libnio.so         libsctp.so          libverify.so  psfont.properties.ja  tzdb.dat 
+jfr        jvm.cfg       libawt_xawt.so      libfreetype.so     libj2pkcs11.so    libjawt.so      libjsound.so  libmanagement.so        libprefs.so       libsplashscreen.so  libzip.so     security
+[root@a31217f048be /]# ls /opt/java/openjdk/bin
+jaotc  jarsigner  javac    javap  jconsole  jdeprscan  jfr    jimage  jjs    jmap  jps         jshell  jstat   keytool  rmic  rmiregistry  unpack200
+jar    java       javadoc  jcmd   jdb       jdeps      jhsdb  jinfo   jlink  jmod  jrunscript  jstack  jstatd  pack200  rmid  serialver

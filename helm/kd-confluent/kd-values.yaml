@@ -60,9 +60,10 @@ kafka:
       memory: 512Mi
   #### For nodePort based external access
   nodePort:
-    enabled: false
+    enabled: true
     ## [Required] Host is used to configure Kafka's external listener
-    host: ""
+    host: 192.168.65.3
+    portOffset: 30220
   loadBalancer:
     enabled: false
     domain: ""

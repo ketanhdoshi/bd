@@ -1,0 +1,98 @@
+---
+version: "3.9"
+
+services:
+  # kafkacat:
+  #   image: confluentinc/cp-kafkacat
+  #   container_name: extkafkacat
+  #   entrypoint: sleep infinity
+
+  kafka-connect-dev:
+    image: kd/customconnect:latest
+    container_name: kafka-connect-dev
+    ports:
+      - 8083:8083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "192.168.65.3:30220"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect-dev"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect-dev
+      CONNECT_CONFIG_STORAGE_TOPIC: _kafka-connect-dev-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _kafka-connect-dev-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _kafka-connect-dev-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      # CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      # CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      # CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      # CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      CONNECT_SASL_MECHANISM: PLAIN
+      CONNECT_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+      CONNECT_PRODUCER_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      CONNECT_PRODUCER_SASL_MECHANISM: PLAIN
+      CONNECT_PRODUCER_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+      CONNECT_LOG4J_ROOT_LOGLEVEL: "INFO"
+      CONNECT_LOG4J_LOGGERS: "org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: '/usr/share/java,/usr/share/confluent-hub-components/'
+    # If you want to use the Confluent Hub installer to d/l component, but make them available
+    # when running this offline, spin up the stack once and then run : 
+    #   docker cp kafka-connect-01:/usr/share/confluent-hub-components ./connectors
+    #   mv ./connectors/confluent-hub-components/* ./connectors
+    #   rm -rf ./connectors/confluent-hub-components
+    volumes:
+      - .:/kdweather
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    command: 
+      - bash 
+      - -c 
+      - |
+        # Nasty hack for ECS
+        #echo '127.0.0.1 kafka-connect-dev' >> /etc/hosts
+        #
+        echo "Installing connector plugins"
+        #confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
+        confluent-hub install --no-prompt /kdweather/target/components/packages/kdoshi-myweather-1.0-SNAPSHOT.zip
+        #
+        # echo "Launching Kafka Connect worker"
+        # /etc/confluent/docker/run & 
+        # #
+        # echo "Waiting for Kafka Connect to start listening on localhost ⏳"
+        # while : ; do
+        #   curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
+        #   echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
+        #   if [ $$curl_status -eq 200 ] ; then
+        #     break
+        #   fi
+        #   sleep 5 
+        # done
+        # #
+        # echo -e "\n--\n+> Creating KD Weather source"
+        # curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/kd-weather-01/config \
+        #     -d '{
+        #           "connector.class" : "com.kd.kdw.MySourceConnector",
+        #           "tasks.max" : "1",
+        #           "cities": "["Ireland", "Chile"]",
+        #           "topic": "kdweather_topic",
+        #           "sleep.seconds": 60
+        # }'
+        #
+        # echo -e "\n--\n+> Creating Data Generator source"
+        # curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/source-datagen-01/config \
+        #     -d '{
+        #     "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+        #     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        #     "kafka.topic": "ratings",
+        #     "max.interval":750,
+        #     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        #     "quickstart": "ratings",
+        #     "iterations": 5,
+        #     "tasks.max": 1
+        # }'
+        sleep infinity
