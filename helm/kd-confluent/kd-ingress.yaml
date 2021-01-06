@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: kd-ingress
+  namespace: kd-confluent
+spec:
+  rules:
+  - http:
+      paths:
+        - backend:
+            serviceName: schemaregistry
+            servicePort: 8081
+          path: /
