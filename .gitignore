@@ -4,6 +4,8 @@ spark/data/
 spark/OLD bigspark/
 spark/devp/*/project/
 spark/devp/*/target/
+spark/devp/*/.bloop/
+spark/devp/*/.metals/
 spark/devp/kafkaavro/src/main/scala/OLD KafkaAvro.scala.txt
 spark/devp/kafkaint/src/main/scala/TEMP KIScala
 spark/Untitled-1.txt
@@ -29,27 +31,12 @@ volumes/
 helm/confluent/
 nodes/
 helm/kdtodo-0.1.0.tgz
-kafka/devp/kdconsumer/.classpath
-kafka/devp/kdconsumer/.project
-kafka/devp/kdconsumer/.settings
-kafka/devp/kdconsumer/target/
-kafka/devp/kdproducer/.classpath
-kafka/devp/kdproducer/.project
-kafka/devp/kdproducer/.settings
-kafka/devp/kdproducer/target/
+kafka/devp/*/.classpath
+kafka/devp/*/.project
+kafka/devp/*/.settings
+kafka/devp/*/target/
+kafka/devp/*/config/
+kafka/devp/*/bin/
+kafka/devp/*/src/test/
 kafka/devp/kdconnector/docker-compose.yml
-kafka/devp/kdconnector/config/
-kafka/devp/kdconnector/bin/
-kafka/devp/kdconnector/src/test/
-kafka/devp/kdconnector/target/
-kafka/devp/kdconnector/.classpath
-kafka/devp/kdconnector/.project
-kafka/devp/kdconnector/.settings
-kafka/devp/kdweather/config/
-kafka/devp/kdweather/bin/
-kafka/devp/kdweather/src/test/
-kafka/devp/kdweather/target/
-kafka/devp/kdweather/.classpath
-kafka/devp/kdweather/.project
-kafka/devp/kdweather/.settings
-vsremote/
+spring/
