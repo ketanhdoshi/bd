@@ -10,8 +10,8 @@ FROM  openjdk:8-jre-alpine
 ARG SCALA_VERSION
 ARG SBT_VERSION
 
-ENV SCALA_VERSION ${SCALA_VERSION:-2.12.8}
-ENV SBT_VERSION ${SBT_VERSION:-1.2.7}
+ENV SCALA_VERSION ${SCALA_VERSION:-2.12.12}
+ENV SBT_VERSION ${SBT_VERSION:-1.4.1}
 
 RUN \
   echo "$SCALA_VERSION $SBT_VERSION" && \
@@ -32,4 +32,5 @@ RUN \
   ln -s /usr/local/sbt/bin/* /usr/local/bin/ && \
   sbt sbt-version || sbt sbtVersion || true
 
-WORKDIR /devp
+# We used this before VSCode Remote Dev, when using the docker-compose setup, since code was mounted in /devp 
+# WORKDIR /devp

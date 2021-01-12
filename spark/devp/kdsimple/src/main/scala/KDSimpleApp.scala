@@ -5,15 +5,15 @@ import org.apache.spark.sql.functions._
 object KDSimpleApp {
   def main(args: Array[String]) {
     val SPARK_HOME = sys.env("SPARK_HOME")
-    val logFile = s"${SPARK_HOME}/README.md"
+    val logFile = args(1)
     val spark = SparkSession.builder
-      .appName("My First Scala")
+      .appName("KD Simple")
       .getOrCreate()
     val logData = spark.read.textFile(logFile).cache()
     val totalLines = logData.count()
     val firstLine = logData.first()
     println(s"========= Total Lines : $totalLines, First line : $firstLine ==========")
-    val filterLines = logData.filter(line => line.contains("Spark")).count()
+    val filterLines = logData.filter(line => line.contains("SPARK")).count()
     println(s"========= Spark Lines : $filterLines ===============")
     val numAs = logData.filter(line => line.contains("a")).count()
     val numBs = logData.filter(line => line.contains("b")).count()
