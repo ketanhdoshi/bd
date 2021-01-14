@@ -14,12 +14,7 @@ object Sentiment {
       .appName("Sentiment Analysis")
       .getOrCreate()
 
-    var file = "/data/reviews_Sports.json"
-    if (args.length == 1) {
-      file = args(0)
-    } else {
-      System.out.println("Using hard coded parameters unless you specify the data file and test file. <datafile testfile>   ")
-    }
+    var file = args(0) + '/' + "reviews_Sports.json"
 
     import spark.implicits._
 
@@ -191,7 +186,7 @@ object Sentiment {
     // save our fitted pipeline model to the distributed file store for later use in production
     // The result of saving the pipeline model is a JSON file for metadata and Parquet files for 
     // model data. We can reload the model with the load command
-    var modeldirectory: String = "/data/sentimentModel/"
+    var modeldirectory: String = args(0) + '/' + "sentimentModel/"
     model.write.overwrite().save(modeldirectory)
     // val sameModel = org.apache.spark.ml.PipelineModel.load(modeldirectory)
 

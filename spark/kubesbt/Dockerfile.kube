@@ -1,0 +1,65 @@
+# Dockerfile used to build kd/sbtkube
+#
+# Add Docker CLI, Kubectl and Helm so we can deploy to K8s directly from a remote dev container
+# https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/kubernetes-helm
+#
+# Note that our base image uses Alpine Linux with x86_64 architecture. So we use Alpine commands
+# below and download binaries appropriate for this architecture. I figured out the architecture
+# by starting a container with the base image and using 'uname -m' from a shell.
+#
+
+# Pull base image
+FROM  openjdk:8-jre-alpine
+
+# Install Docker client (not full Docker engine) from its download location
+# Download into a temp directory, extract it and then delete the temp directory
+# I opened the Docker download URL 'https://download.docker.com/linux/static/stable/x86_64' to see
+# all the released versions, and chose the latest one.
+# 
+# Based on example in https://github.com/Cethy/alpine-docker-client/blob/master/Dockerfile
+# The above example also uses the package manager to install curl and deletes it after the Docker client
+# is downloaded. It then deletes the package manager's cache to save space. Since curl is already on
+# image, we don't do that here, but we do delete the cache even though it isn't strictly required.
+#
+# Note that we use the download way to get Docker rather than the standard and simpler package 
+# manager way 'apk add --no-cache docker-cli' because it is not able to find the 
+# package in the repo and gives ERROR: unsatisfiable constraints: docker-cli (missing)
+ARG DOCKER_CLI_VERSION="20.10.2"
+ENV DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
+RUN apk add --no-cache curl \
+    && apk add --no-cache bash \
+    && mkdir -p /tmp/download \
+    && curl -L $DOWNLOAD_URL | tar -xz -C /tmp/download \
+    && mv /tmp/download/docker/docker /usr/local/bin/ \
+    && rm -rf /tmp/download \
+    && rm -rf /var/cache/apk/*
+
+# Install kubectl from its download location
+# The nested curl command returns the latest version number eg. 'v1.20.1'
+# Note that it downloads the 'amd64' binaries which run on 'x86_64' architecture as well.
+# See instructions in https://kubernetes.io/docs/tasks/tools/install-kubectl/
+RUN curl -sSL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
+    && chmod +x /usr/local/bin/kubectl
+
+# Install Helm. Note that it downloads the 'amd64' binaries which run on 'x86_64' architecture as well.
+# See instructions in https://helm.sh/docs/intro/install/ 
+# Set the environment variable to avoid this error: 
+#     "In order to verify checksum, openssl must first be installed. Please install openssl or set VERIFY_CHECKSUM=false"
+ENV VERIFY_CHECKSUM=false
+RUN curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash -
+
+# We want the remote container to connect to the same K8s cluster as the host laptop. For this we copy the
+# K8s cluster connection settings from the Windows user's profile directory in ~/.kube/config into the remote
+# container so that it uses those same settings.
+# This is implemented by:
+# 1) Mount the Windows ~/.kube folder into /usr/local/share/kube-localhost on the remote container (in devcontainer.json)
+# 2) Copying the copy-kube-config.sh script into the Docker image for the remote container (below)
+# 3) Inserting a call to the copy-kube-config.sh script into the root user's .bashrc file on the remote container (below)
+# 4) Therefore, when the remote container is running, and you manually launch a bash shell on it, the copy-kube-config.sh script
+#    is invoked. That script copies the Kubernetes kube config file from /usr/local/share/kube-localhost into the container user's
+#    home directory, and edits it by replacing 'localhost' to 'host.docker.internal' in the container's copy of the config file.
+# 
+# Use the copy-kube-config.sh script from https://github.com/microsoft/vscode-dev-containers/blob/master/containers/kubernetes-helm/.devcontainer/copy-kube-config.sh
+# Copy that script into the image and run the script from the container's /root/.bashrc and/or /root/.zshrc
+COPY ./copy-kube-config.sh /usr/local/share/
+RUN echo "source /usr/local/share/copy-kube-config.sh" | tee -a /root/.bashrc >> /root/.zshrc

@@ -5,6 +5,7 @@ spark/OLD bigspark/
 spark/devp/*/project/
 spark/devp/*/target/
 spark/devp/*/.bloop/
+spark/devp/*/.bsp/
 spark/devp/*/.metals/
 spark/devp/kafkaavro/src/main/scala/OLD KafkaAvro.scala.txt
 spark/devp/kafkaint/src/main/scala/TEMP KIScala
