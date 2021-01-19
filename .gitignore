@@ -40,4 +40,5 @@ kafka/devp/*/config/
 kafka/devp/*/bin/
 kafka/devp/*/src/test/
 kafka/devp/kdconnector/docker-compose.yml
-spring/
+spring/.mvn/
+
