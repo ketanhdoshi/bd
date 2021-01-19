@@ -1,0 +1,5 @@
+# See example in https://hub.docker.com/_/alpine 
+# Also https://github.com/arey/mysql-client/blob/master/Dockerfile
+FROM alpine:3.13
+RUN apk add --no-cache mysql-client
+# ENTRYPOINT ["mysql"]

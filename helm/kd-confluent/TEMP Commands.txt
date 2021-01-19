@@ -14,13 +14,16 @@ http://localhost:5601
 docker logs c919509dc787d0a0e8a585fcfdc909cc670e3d1988f9a9421a41a7f24a5f71ec 2>&1 >kdccc.log
 docker logs 1ad1de2bec4351c192abf3e52f6899cc6b4cd59a2fad539cb6fbd6950bb08303 2>&1 >kdkfk.log
 
-# Internal Kafkacat list topics, produce and consume messages
+# Internal Kafkacat within kd-confluent namespace - list topics, produce and consume messages
 kafkacat -b kafka:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
 kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
 kafkacat -b kafka:9071 -t qe -C -F /etc/kafka-client-properties/kafka-client.properties
 
 # Produce with key. So input <key>:<value>
 kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
+
+# Internal Kafkacat outside kd-confluent namespace - list topics, produce and consume messages
+kafkacat -b kafka.kd-confluent.svc.cluster.local:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
 
 # External Kafkacat
 kafkacat -b 192.168.65.3:30220 -L -F kafka.properties
@@ -227,3 +230,6 @@ C:\KD\Dev\bd> docker build --tag=kd/kafkaconnect . -f .\helm\kd-confluent\Docker
 "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" clean -f "c:\KD\Dev\bd\kafka\devp\kdtest\pom.xml"
 cmd /c "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\kd\Dev\bd\kafka\devp\kdtest\foo.xml"
 
+# Launch Spark application kafkaavro
+kubectl delete sparkapplication kd-kafkaavro
+kubectl apply -f /kd-spark/kd-kafkaavro.yaml

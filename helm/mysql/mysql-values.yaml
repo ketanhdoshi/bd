@@ -13,6 +13,14 @@ configurationFiles:
     binlog_row_image  = full
     expire_logs_days  = 10
 
+service:
+  ## Specify a service type
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
+  type: NodePort
+  port: 3306
+  nodePort: 30300
+  # loadBalancerIP:
+
 # Delay before liveness probe is initiated
 livenessProbe:
   initialDelaySeconds: 120
