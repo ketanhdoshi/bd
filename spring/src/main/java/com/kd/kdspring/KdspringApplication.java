@@ -7,13 +7,19 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
-@EnableJpaRepositories("com.kd.kdspring") 
+import com.kd.kdspring.book.BookController;
+import com.kd.kdspring.member.MemberController;
+import com.kd.kdspring.member.MemberService;
+
+@EnableJpaRepositories({"com.kd.kdspring.book", "com.kd.kdspring.member"})
+//@EnableJpaRepositories
 @EntityScan("com.kd.kdspring.model")
 @SpringBootApplication
+@ComponentScan(useDefaultFilters=false)
 public class KdspringApplication {
 
 	public static void main(String[] args) {
@@ -34,6 +40,31 @@ public class KdspringApplication {
 
 		};
 	}
+
+	@Bean
+    public HelloController helloController() {
+        return new HelloController();
+    }
+
+	@Bean
+    public SimpleController simpleController() {
+        return new SimpleController();
+    }
+
+	@Bean
+    public BookController bookController() {
+        return new BookController();
+    }
+
+	@Bean
+    public MemberController memberController() {
+        return new MemberController();
+    }
+
+	@Bean
+    public MemberService memberService() {
+        return new MemberService();
+    }
 
 }
 

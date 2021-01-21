@@ -1,4 +1,4 @@
-package com.kd.kdspring;
+package com.kd.kdspring.book;
 
 import org.springframework.data.repository.CrudRepository;
 
