@@ -1,0 +1,64 @@
+helm upgrade sparkop spark-operator/spark-operator --namespace spark-operator --create-namespace --set sparkJobNamespace=spark-app --set webhook.enable=true
+
+KUBERNETES_SERVICE_PORT_HTTPS=443
+KUBERNETES_SERVICE_PORT=443
+HOSTNAME=spark-pi-driver
+JAVA_HOME=/usr/local/openjdk-8
+JAVA_BASE_URL=https://github.com/AdoptOpenJDK/openjdk8-upstream-binaries/releases/download/jdk8u252-b09/OpenJDK8U-jre_
+PWD=/opt/spark/work-dir
+JAVA_URL_VERSION=8u252b09
+SPARK_PI_UI_SVC_SERVICE_PORT=4040
+SPARK_PI_UI_SVC_SERVICE_PORT_SPARK_DRIVER_UI_PORT=4040
+HOME=/opt/spark
+LANG=C.UTF-8
+KUBERNETES_PORT_443_TCP=tcp://10.96.0.1:443
+SPARK_PI_UI_SVC_PORT_4040_TCP_ADDR=10.109.69.225      
+TERM=xterm
+SPARK_DRIVER_BIND_ADDRESS=10.1.3.157
+SPARK_PI_UI_SVC_PORT=tcp://10.109.69.225:4040
+SPARK_APPLICATION_ID=spark-eb15fcb91b2645739d6d8311184d10b2
+SPARK_USER=root
+SPARK_PI_UI_SVC_SERVICE_HOST=10.109.69.225
+SPARK_PI_UI_SVC_PORT_4040_TCP_PORT=4040
+SPARK_LOCAL_DIRS=/var/data/spark-43ab045b-ac7f-4d6e-b6a6-1a069cef7b19
+SHLVL=1
+SPARK_HOME=/opt/spark
+KUBERNETES_PORT_443_TCP_PROTO=tcp
+KUBERNETES_PORT_443_TCP_ADDR=10.96.0.1
+SPARK_PI_UI_SVC_PORT_4040_TCP=tcp://10.109.69.225:4040
+SPARK_CONF_DIR=/opt/spark/conf
+KUBERNETES_SERVICE_HOST=10.96.0.1
+KUBERNETES_PORT=tcp://10.96.0.1:443
+KUBERNETES_PORT_443_TCP_PORT=443
+PATH=/usr/local/openjdk-8/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+SPARK_PI_UI_SVC_PORT_4040_TCP_PROTO=tcp
+JAVA_VERSION=8u252
+_=/usr/bin/env
+185@spark-pi-driver:~/work-dir$ 
+
+2021.01.11 10:55:40 INFO  logging to file /workspaces/kdsimple/.metals/metals.log
+2021.01.11 10:55:40 INFO  Started: Metals version 0.9.8 in workspace '/workspaces/kdsimple' for client vscode.
+2021.01.11 10:55:41 INFO  time: initialize in 0.85s
+Initializing Scala Debugger
+2021.01.11 10:55:43 WARN  Build server is not auto-connectable.
+2021.01.11 10:55:43 WARN  no build target for: /workspaces/kdsimple/build.sbt
+2021.01.11 10:55:50 INFO  no build target: using presentation compiler with only scala-library
+2021.01.11 10:55:51 INFO  running '/usr/lib/jvm/java-1.8-openjdk/jre/bin/java -Djline.terminal=jline.UnsupportedTerminal -Dsbt.log.noformat=true -Dfile.encoding=UTF-8 -jar /tmp/metals8269663602999974691/sbt-launch.jar -Dbloop.export-jar-classifiers=sources bloopInstall'
+2021.01.11 10:55:56 INFO  [info] welcome to sbt 1.4.1 (IcedTea Java 1.8.0_212)
+2021.01.11 10:56:02 INFO  [info] loading settings for project kdsimple-build-build from metals.sbt ...
+2021.01.11 10:56:04 INFO  [info] loading project definition from /workspaces/kdsimple/project/project
+2021.01.11 10:56:29 INFO  [info] loading settings for project kdsimple-build from metals.sbt ...
+2021.01.11 10:56:29 INFO  [info] loading project definition from /workspaces/kdsimple/project
+2021.01.11 10:56:47 INFO  [success] Generated .bloop/kdsimple-build.json
+2021.01.11 10:56:47 INFO  [success] Total time: 18 s, completed Jan 11, 2021 10:56:47 AM
+2021.01.11 10:56:52 INFO  [info] loading settings for project kdsimple from build.sbt ...
+2021.01.11 10:56:52 INFO  [info] set current project to KD Simple (in build file:/workspaces/kdsimple/)
+2021.01.11 10:58:22 INFO  [warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.
+2021.01.11 10:59:15 INFO  [warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.
+2021.01.11 10:59:17 INFO  [success] Generated .bloop/kdsimple.json
+2021.01.11 10:59:17 INFO  [success] Generated .bloop/kdsimple-test.json
+2021.01.11 10:59:17 INFO  [success] Total time: 144 s (02:24), completed Jan 11, 2021 10:59:17 AM
+2021.01.11 10:59:17 INFO  sbt bloopInstall exit: 0
+2021.01.11 10:59:17 INFO  time: ran 'sbt bloopInstall' in 3m25s
+2021.01.11 10:59:17 INFO  Attempting to connect to the build server...
+2021.01.11 11:00:19 ERROR Failed to connect with build server, no functionality will work.

@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "Person",
+  "namespace": "com.sparkbyexamples",
+  "fields": [
+    {"name": "id","type": ["int", "null"]},
+    {"name": "firstname","type": ["string", "null"]},
+    {"name": "middlename","type": ["string", "null"]},
+    {"name": "lastname","type": ["string", "null"]},
+    {"name": "dob_year","type": ["int", "null"]},
+    {"name": "dob_month","type": ["int", "null"]},
+    {"name": "gender","type": ["string", "null"]},
+    {"name": "salary","type": ["int", "null"]}
+  ]
+}

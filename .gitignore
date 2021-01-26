@@ -1,6 +1,5 @@
 spark/spark-2.4.3-bin-hadoop2.7.tgz
 spark/BAK spark-2.4.3-bin-hadoop2.7.tgz
-spark/data/
 spark/OLD bigspark/
 spark/devp/*/project/
 spark/devp/*/target/
