@@ -9,11 +9,19 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming._
+import org.apache.avro.Schema
 
 // For Processing Avro Data
+import za.co.absa.abris.avro.read.confluent.SchemaManagerFactory
 import za.co.absa.abris.avro.read.confluent.SchemaManager
+import za.co.absa.abris.avro.registry.SchemaSubject
+import za.co.absa.abris.config.AbrisConfig
+import org.apache.spark.sql.avro.SchemaConverters.toAvroType
+
+
+/* import za.co.absa.abris.avro.read.confluent.SchemaManager
 import za.co.absa.abris.avro.schemas.policy.SchemaRetentionPolicies.{RETAIN_ORIGINAL_SCHEMA, RETAIN_SELECTED_COLUMN_ONLY}
-import za.co.absa.abris.avro.AvroSerDe._
+import za.co.absa.abris.avro.AvroSerDe._ */
 
 //-------------------------------------------
 // Utility Functions
@@ -45,6 +53,9 @@ object MyUtil {
       .option("startingOffsets", startingOffsets)
       //.option("startingOffsets", """ {"test-file-string-four":{"0":4}} """)
       // .option("startingOffsets", "earliest") // read data from the start of the stream
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .load()
  
     // The Key and Value are binary data, so deserialise them into strings
@@ -101,6 +112,9 @@ object MyUtil {
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
       .option("topic", topic)
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .option("checkpointLocation", checkpointLocation)
       .outputMode(mode)
       .start()
@@ -135,12 +149,15 @@ object MyUtil {
       schemaRegistryUrl: String,
       offset: Integer = 0) : DataFrame = {
 
-    val schemaRegistryConfs = Map(
+/*     val schemaRegistryConfs = Map(
       SchemaManager.PARAM_SCHEMA_REGISTRY_URL          -> schemaRegistryUrl,
       SchemaManager.PARAM_SCHEMA_REGISTRY_TOPIC        -> topic,
       SchemaManager.PARAM_VALUE_SCHEMA_NAMING_STRATEGY -> SchemaManager.SchemaStorageNamingStrategies.TOPIC_NAME,
       SchemaManager.PARAM_VALUE_SCHEMA_ID              -> "latest" // otherwise, just specify an id
-    )
+    ) */
+
+    val schemaManager = SchemaManagerFactory.create(Map(AbrisConfig.SCHEMA_REGISTRY_URL -> schemaRegistryUrl))
+    val schemaExists = schemaManager.exists(SchemaSubject.usingTopicNameStrategy("foo"))
 
     // If no starting offset for the topic is specified, use the default value to set
     // the offset to "earliest". If an offset is specified, format the value to read from that
@@ -155,11 +172,45 @@ object MyUtil {
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topic)
       .option("startingOffsets", startingOffsets)
-      // .load()
-      .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY)
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
+      .load()
+      // .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY)
 
-    return df
+    val abrisConfig = AbrisConfig
+      .fromConfluentAvro
+      .downloadReaderSchemaByLatestVersion
+      .andTopicNameStrategy(topic)
+      .usingSchemaRegistry(schemaRegistryUrl)
+
+    import za.co.absa.abris.avro.functions.from_avro
+    val dfser = df.select(from_avro(col("value"), abrisConfig) as 'data)
+    val dfflat = dfser.selectExpr("data.*")
+
+    return dfflat
   }
+
+  // generate schema for dataframe
+  def generateSchema(dataFrame: DataFrame): Schema = {
+    val allColumns = struct(dataFrame.columns.map(c => dataFrame(c)): _*)
+    val expression = allColumns.expr
+    toAvroType(expression.dataType, expression.nullable)
+  }
+
+  // register schema with topic name strategy
+  def registerSchema(topic: String, schema: Schema, schemaManager: SchemaManager): Int = {
+    val subject = SchemaSubject.usingTopicNameStrategy(topic, isKey=false) // Use isKey=true for the key schema and isKey=false for the value schema
+
+    val ss = schema.toString()
+    val sub = subject.asString
+    println (s"==== ==================== $topic == $sub" )
+    println (ss)
+    println (s"==== ====================")
+
+    schemaManager.register(subject, schema)
+  }
+
 
   //-------------------------------------------
   // Write a streaming dataframe to Kafka in Avro format
@@ -173,22 +224,43 @@ object MyUtil {
       df:DataFrame) : StreamingQuery = {
 
     // Name of schema and namespace to create under the subject
-    val destSchema = "kdschema"
-    val destSchemaNamespace = "kdnamespace"
+    /* val destSchema = "kdschema"
+    val destSchemaNamespace = "kdnamespace" */
 
-    val schemaRegistryConfs = Map(
+    /* val schemaRegistryConfs = Map(
       SchemaManager.PARAM_SCHEMA_REGISTRY_URL          -> schemaRegistryUrl,
       SchemaManager.PARAM_VALUE_SCHEMA_NAMING_STRATEGY -> SchemaManager.SchemaStorageNamingStrategies.TOPIC_NAME
-    )
+    ) */
+
+    val schemaRegistryClientConfig = Map(AbrisConfig.SCHEMA_REGISTRY_URL -> schemaRegistryUrl)
+    val schemaManager = SchemaManagerFactory.create(schemaRegistryClientConfig)
+
+    val schema = generateSchema(df)
+    val schemaId = registerSchema(topic, schema, schemaManager)
+
+    val abrisConfig = AbrisConfig
+      .toConfluentAvro
+      .downloadSchemaById(schemaId)
+      .usingSchemaRegistry(schemaRegistryUrl)
+
+    import za.co.absa.abris.avro.functions.to_avro
+
+     // to serialize all columns in dataFrame we need to put them in a spark struct
+    val allColumns = struct(df.columns.head, df.columns.tail: _*)
+    val dfavro = df.select(to_avro(allColumns, abrisConfig) as 'value)
 
     // Write the stream to Kafka, after serialising it in Confluent's Avro format. Create the
     // schema definition in the Schema Registry if it doesn't exist
-    val kafkaOutput = df.toConfluentAvro(topic, "kdis", "kdisns")(schemaRegistryConfs)
+    // val kafkaOutput = df.toConfluentAvro(topic, "kdis", "kdisns")(schemaRegistryConfs)
+    val kafkaOutput = dfavro
       .writeStream
       .format("kafka")
       .outputMode(mode)
       .option("kafka.bootstrap.servers", brokers)
       .option("topic", topic)
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .option("checkpointLocation", checkpointLocation)
       .start()
 
@@ -261,12 +333,20 @@ object MyUtil {
 //-------------------------------------------
 object KafkaInt {
   def main(args: Array[String]): Unit = {
+    //val brokers = "kafka:29092"
+    //val schemaRegistryUrl = "http://schema-registry:8090"
+
+    val brokers = args(0)
+    val schemaRegistryUrl = args(1)
+    val eventsTopic = args(2) // "demo-events"
+    val dataDir = args(3) + "/"
+
     // Initialise Spark
     val spark: SparkSession = SparkSession.builder
       .appName("Kafka Integration")
       .getOrCreate()
 
-    new StreamsApp(spark, "kafka:29092", "http://schema-registry:8090").process()
+    new StreamsApp(spark, brokers, schemaRegistryUrl, eventsTopic, dataDir).process()
   }
 }
 
@@ -455,7 +535,12 @@ object StatefulFunc {
 //-------------------------------------------
 // Class for our Streaming Application
 //-------------------------------------------
-class StreamsApp(spark: SparkSession, brokers: String, schemaRegistryUrl: String) {
+class StreamsApp(
+  spark: SparkSession, 
+  brokers: String, 
+  schemaRegistryUrl: String, 
+  eventsTopic: String,
+  dataDir:String) {
 
   //-------------------------------------------
   // Define and register a UDF to calculate the elapsed time difference in seconds
@@ -600,12 +685,11 @@ class StreamsApp(spark: SparkSession, brokers: String, schemaRegistryUrl: String
   private def doAvro (): Unit = {
     import spark.implicits._
 
-    var dfAvro = MyUtil.readKafkaAvro (spark, brokers, "demo-events", schemaRegistryUrl, offset=2)
+    var dfAvro = MyUtil.readKafkaAvro (spark, brokers, eventsTopic, schemaRegistryUrl, offset=5)
     dfAvro = dfAvro.transform (MyUtil.LongToTimestamp ("event_time", "event_ts"))
 
-
-    val kafkaOutputAvro = MyUtil.writeKafkaAvro (brokers, "test-avro", 
-                  schemaRegistryUrl, "append", "/data/checkpoints_avro", dfAvro)
+    val kafkaOutputAvro = MyUtil.writeKafkaAvro (brokers, "test5", 
+                  schemaRegistryUrl, "append", dataDir + "checkpoints_avro", dfAvro)
     val consoleOutputAvro = MyUtil.writeConsole ("append", dfAvro)
   }
 
@@ -630,7 +714,7 @@ class StreamsApp(spark: SparkSession, brokers: String, schemaRegistryUrl: String
 
     println(s"========== SHOW ==========" )
     val kafkaOutputJson = MyUtil.writeKafkaJson (brokers, "kdcount", "complete", 
-                                      "/data/checkpoints", dfcount, "FULL_NAME")
+                                      dataDir + "checkpoints_json", dfcount, "FULL_NAME")
     val consoleOutputJson = MyUtil.writeConsole ("complete", dfcount)
   }
 

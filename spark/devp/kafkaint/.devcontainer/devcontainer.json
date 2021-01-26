@@ -1,0 +1,53 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json
+{
+	"name": "Scala with K8s/Helm",
+	"image": "kd/kubesbt",
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"java.home": "/usr/lib/jvm/java-1.8-openjdk/jre",
+		// Helm binary path in Docker image, needed for the Kubernetes extension
+		"vs-kubernetes": {
+			"vs-kubernetes.helm-path": "/usr/local/bin/helm"
+		}
+	},
+	
+	// Add the IDs of extensions you want installed when the container is created.
+	// Extensions for Scala Metals, Docker and Kubernetes
+	"extensions": [
+		"scalameta.metals",
+		"ms-azuretools.vscode-docker",
+		"ms-kubernetes-tools.vscode-kubernetes-tools"
+	],
+
+	"mounts": [
+		// Forward the local Windows laptop's Docker socket docker.sock into the container.
+		// This allows the Docker client to run on this container and connect to the Docker Engine daemon that 
+		// is running on the host laptop. It is known as Docker-out-of-Docker.
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+		// Mount the local Windows .kube folder into the container.
+		// This allows the kubectl on the container to connect to the same K8s cluster of the laptop.
+		"source=${env:HOME}${env:USERPROFILE}/.kube,target=/usr/local/share/kube-localhost,type=bind",
+		// Mount some code folders from the dev env (containing the .yaml file to launch the Spark application)
+		//"source=/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark-dev,target=/spark-dev,type=bind,consistency=cached",
+		"source=${localWorkspaceFolder}/../../data,target=/data,type=bind,consistency=cached",
+		"source=${localWorkspaceFolder}/../../../helm/kd-spark,target=/kd-spark,type=bind,consistency=cached"
+	],
+
+	// Environment variables for the container
+	"remoteEnv": {
+		"SYNC_LOCALHOST_KUBECONFIG": "true"
+	},
+
+	// We run on the remote container as the root user.
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "java -version",
+
+	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	//"remoteUser": "vscode"
+}

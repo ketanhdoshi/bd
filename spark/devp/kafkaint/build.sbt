@@ -1,8 +1,8 @@
 name := "Kafka Integration"
 version := "1.0"
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.12"
 
-val sparkVersion = "2.4.3"
+val sparkVersion = "3.0.0"
 
 // Add different Maven repository for Confluent libraries
 // Needed for Avro and Schema Registry integration
@@ -15,5 +15,5 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
 
   // For Avro and Schema Registry integration in Confluent format
-  "za.co.absa" %% "abris" % "2.2.2"
+  "za.co.absa" %% "abris" % "4.0.1"
 )

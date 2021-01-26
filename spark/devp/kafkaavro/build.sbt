@@ -1,8 +1,8 @@
 name := "Kafka Avro"
 version := "1.0"
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.12"
 
-val sparkVersion = "2.4.3"
+val sparkVersion = "3.0.0"
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % sparkVersion,

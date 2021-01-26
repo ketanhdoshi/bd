@@ -22,13 +22,15 @@ import org.apache.spark.sql.avro._
 //-------------------------------------------
 object KafkaAvro {
   def main(args: Array[String]): Unit = {
-    val brokers = "kafka:29092"
-    new StreamsProcessor(brokers).process()
+    //val brokers = "kafka:29092"
+    val brokers = args(0)
+    val dataDir = args(1) + "/"
+    new StreamsProcessor(brokers, dataDir).process()
   }
 }
 
 //-------------------------------------------
-// To run this, first create a topic in Kafka (called 'json_topic').
+// To run this, first create a topic in Kafka (called 'json_spark').
 // Then submit "person" data using kafkacat to that topic. Feed one 
 // line at a time by copying and pasting the data from the URL below:
 // https://raw.githubusercontent.com/sparkbyexamples/spark-examples/master/spark-streaming/src/main/resources/person.json
@@ -37,7 +39,7 @@ object KafkaAvro {
 // topic in Kafka (called 'avro_topic'), so monitor it using kafkacat
 // Finally that topic will be read and output to the console
 //-------------------------------------------
-class StreamsProcessor(brokers: String) {
+class StreamsProcessor(brokers: String, dataDir: String) {
 
 def process(): Unit = {
 
@@ -51,8 +53,11 @@ def process(): Unit = {
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
-      .option("subscribe", "json_topic")
+      .option("subscribe", "json_spark")
       .option("startingOffsets", "earliest") // read data from the start of the stream
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .load()
 
     // That JSON data is structured per the 'Person' schema
@@ -86,7 +91,10 @@ def process(): Unit = {
       .outputMode("append")
       .option("kafka.bootstrap.servers", brokers)
       .option("topic", "avro_topic")
-      .option("checkpointLocation", "/data/checkpoints")
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
+      .option("checkpointLocation", dataDir + "checkpoints")
       .start()
 
     // Read the Avro data from Kafka that we just wrote
@@ -96,12 +104,15 @@ def process(): Unit = {
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", "avro_topic")
       .option("startingOffsets", "earliest") // read data from the start of the stream
+      .option("kafka.sasl.mechanism", "PLAIN")
+      .option("kafka.security.protocol", "SASL_PLAINTEXT")
+      .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .load()
     adf.printSchema
 
     // Now read the same 'Person' schema from a file 
     val jsonFormatSchema = new String(
-        Files.readAllBytes(Paths.get("/data/person.avsc")))
+        Files.readAllBytes(Paths.get(dataDir + "person.avsc")))
 
     // Convert the Avro data to DataFrame
     val apersonDF = adf.select(from_avro(col("value"), jsonFormatSchema).as("person"))

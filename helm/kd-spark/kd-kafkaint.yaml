@@ -1,0 +1,114 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: kd-kafkaint
+  namespace: spark-app
+spec:
+  type: Scala
+  mode: cluster
+  image: "gcr.io/spark-operator/spark:v3.0.0"
+  imagePullPolicy: Always
+  mainClass: com.ketan.KafkaInt
+  mainApplicationFile: "local:///tmp/dev/kafkaint/target/scala-2.12/kafka-integration_2.12-1.0.jar"
+  arguments: 
+    - "kafka.kd-confluent.svc.cluster.local:9071"
+    - "http://schemaregistry.kd-confluent.svc.cluster.local:8081"
+    - "test1"
+    - "/tmp/data"
+  deps:
+    repositories:
+      - https://packages.confluent.io/maven
+    packages:
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0
+      - za.co.absa:abris_2.12:4.0.1
+  sparkVersion: "3.0.0"
+  sparkConf:
+    # NB: No spaces between jars (after the comma), otherwise we get errors
+    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,za.co.absa:abris_2.12:4.0.1"
+    spark.jars.repositories: "https://packages.confluent.io/maven"
+    spark.jars: "local:///tmp/ivy/jars/com.101tec_zkclient-0.10.jar,\
+      local:///tmp/ivy/jars/com.fasterxml.jackson.core_jackson-annotations-2.9.10.jar,\
+      local:///tmp/ivy/jars/com.fasterxml.jackson.core_jackson-core-2.9.10.jar,\
+      local:///tmp/ivy/jars/com.fasterxml.jackson.core_jackson-databind-2.9.10.5.jar,\
+      local:///tmp/ivy/jars/com.github.luben_zstd-jni-1.4.4-3.jar,\
+      local:///tmp/ivy/jars/com.github.spotbugs_spotbugs-annotations-3.1.8.jar,\
+      local:///tmp/ivy/jars/com.google.code.findbugs_jsr305-3.0.2.jar,\
+      local:///tmp/ivy/jars/com.thoughtworks.paranamer_paranamer-2.7.jar,\
+      local:///tmp/ivy/jars/io.confluent_common-config-5.3.4.jar,\
+      local:///tmp/ivy/jars/io.confluent_common-utils-5.3.4.jar,\
+      local:///tmp/ivy/jars/io.confluent_kafka-avro-serializer-5.3.4.jar,\
+      local:///tmp/ivy/jars/io.confluent_kafka-schema-registry-client-5.3.4.jar,\
+      local:///tmp/ivy/jars/io.netty_netty-3.10.6.Final.jar,\
+      local:///tmp/ivy/jars/org.apache.avro_avro-1.8.2.jar,\
+      local:///tmp/ivy/jars/org.apache.commons_commons-compress-1.8.1.jar,\
+      local:///tmp/ivy/jars/org.apache.commons_commons-pool2-2.6.2.jar,\
+      local:///tmp/ivy/jars/org.apache.kafka_kafka-clients-2.4.1.jar,\
+      local:///tmp/ivy/jars/org.apache.spark_spark-avro_2.12-2.4.6.jar,\
+      local:///tmp/ivy/jars/org.apache.spark_spark-sql-kafka-0-10_2.12-3.0.0.jar,\
+      local:///tmp/ivy/jars/org.apache.spark_spark-token-provider-kafka-0-10_2.12-3.0.0.jar,\
+      local:///tmp/ivy/jars/org.apache.yetus_audience-annotations-0.5.0.jar,\
+      local:///tmp/ivy/jars/org.apache.zookeeper_zookeeper-3.4.14.jar,\
+      local:///tmp/ivy/jars/org.codehaus.jackson_jackson-core-asl-1.9.13.jar,\
+      local:///tmp/ivy/jars/org.codehaus.jackson_jackson-mapper-asl-1.9.13.jar,\
+      local:///tmp/ivy/jars/org.lz4_lz4-java-1.7.1.jar,\
+      local:///tmp/ivy/jars/org.slf4j_slf4j-api-1.7.30.jar,\
+      local:///tmp/ivy/jars/org.spark-project.spark_unused-1.0.0.jar,\
+      local:///tmp/ivy/jars/org.tukaani_xz-1.5.jar,\
+      local:///tmp/ivy/jars/org.xerial.snappy_snappy-java-1.1.7.5.jar,\
+      local:///tmp/ivy/jars/za.co.absa_abris_2.12-4.0.1.jar"
+    spark.jars.ivy: "/tmp/ivy"
+  restartPolicy:
+    type: Never
+  volumes:
+    - name: "test-volume"
+      hostPath:
+        path: "/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark/kitmp"
+        type: Directory
+    - name: "data"
+      hostPath:
+        path: "/run/desktop/mnt/host/c/kd/dev/bd/spark/data"
+        type: Directory
+    - name: "dev"
+      hostPath:
+        path: "/run/desktop/mnt/host/c/kd/dev/bd/spark/devp"
+        type: Directory
+    - name: "ivy"
+      hostPath:
+        path: "/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark/kiivy"
+        type: Directory
+  driver:
+    # 'cores' takes only integer values, with a minimum of 1 which requires
+    # 1 full CPU. Use 'coreRequest' instead which takes fractional values.
+    # For more info https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/issues/581 
+#    cores: 1
+    coreRequest: 100m
+    coreLimit: "1200m"
+    memory: "512m"
+    labels:
+      version: 3.0.0
+    serviceAccount: sparkop-spark
+    volumeMounts:
+      - name: "test-volume"
+        mountPath: "/tmp"
+      - name: "data"
+        mountPath: "/tmp/data"
+      - name: "dev"
+        mountPath: "/tmp/dev"
+      - name: "ivy"
+        mountPath: "/tmp/ivy"
+  executor:
+#    cores: 1
+    coreRequest: 100m
+    instances: 1
+    memory: "512m"
+    labels:
+      version: 3.0.0
+    volumeMounts:
+      - name: "test-volume"
+        mountPath: "/tmp"
+      - name: "data"
+        mountPath: "/tmp/data"
+      - name: "dev"
+        mountPath: "/tmp/dev"
+      - name: "ivy"
+        mountPath: "/tmp/ivy"

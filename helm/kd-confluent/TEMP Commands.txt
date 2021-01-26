@@ -233,3 +233,19 @@ cmd /c "C:\KD\Tools\maven-3.6.3\bin\mvn.cmd" package -f "c:\kd\Dev\bd\kafka\devp
 # Launch Spark application kafkaavro
 kubectl delete sparkapplication kd-kafkaavro
 kubectl apply -f /kd-spark/kd-kafkaavro.yaml
+
+# Configure Datagen connector to generate Events data (for Spark integration kafkaint)
+curl -X PUT http://localhost:8083/connectors/kd-events-01/config \
+    -s -H  "Content-Type:application/json" \
+    -d '{
+        "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+        "kafka.topic": "test1",
+        "schema.filename": "/kdweather/events.avro",
+        "schema.keyfield": "event_time",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://192.168.65.3:30075",
+        "max.interval": 7500,
+        "iterations": 5,
+        "tasks.max": "1"
+    }'
