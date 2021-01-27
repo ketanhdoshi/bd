@@ -1,4 +1,4 @@
-package com.kd.kdspring;
+package com.kd.kdspring.web;
 
 import java.util.Arrays;
 
@@ -15,15 +15,22 @@ import com.kd.kdspring.book.BookController;
 import com.kd.kdspring.member.MemberController;
 import com.kd.kdspring.member.MemberService;
 
+// This is the Web Server in the microservice architecture.
+// It also contains a small 'monolithic' application with some web controllers
+// as well as a handful of REST APIs with their database backends.
+
+// Tell Boot to search and auto-instantiate Repository beans in these packages
 @EnableJpaRepositories({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 //@EnableJpaRepositories
-@EntityScan("com.kd.kdspring.model")
+// Tell Boot to search and auto-instantiate Entity beans in these packages
+@EntityScan({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 @SpringBootApplication
 @ComponentScan(useDefaultFilters=false)
-public class KdspringApplication {
+public class WebApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(KdspringApplication.class, args);
+		// Launch the application
+		SpringApplication.run(WebApplication.class, args);
 	}
 
 	@Bean

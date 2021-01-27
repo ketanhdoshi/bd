@@ -1,4 +1,4 @@
-package com.kd.kdspring.model;
+package com.kd.kdspring.book;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

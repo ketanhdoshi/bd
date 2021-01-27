@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import javax.validation.Valid;
 import java.util.List;
 
-import com.kd.kdspring.model.Member;
-
 @RestController
 @RequestMapping("/api/members")
 public class MemberController {

@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+// Here we use MocMvc to mock send a HTTP request to the DispatcherServlet and get
+// a response. It does not start the Tomcat web server and the full application.
 @SpringBootTest
 @AutoConfigureMockMvc
 public class HelloControllerTest {

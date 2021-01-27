@@ -1,10 +1,12 @@
-package com.kd.kdspring.model;
+package com.kd.kdspring.member;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import lombok.Data;
 
+// @Data, from Lombok generates boilerplate code for getters/setters that is normally 
+// needed with POJOs
 @Data
 @Entity
 @Table(name= "members")
