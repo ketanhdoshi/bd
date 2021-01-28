@@ -1,4 +1,4 @@
-package com.kd.kdspring.web;
+package com.kd.kdspring.legacy;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;

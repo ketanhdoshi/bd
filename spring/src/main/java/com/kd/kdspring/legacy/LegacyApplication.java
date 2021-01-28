@@ -1,4 +1,4 @@
-package com.kd.kdspring.web;
+package com.kd.kdspring.legacy;
 
 import java.util.Arrays;
 
@@ -15,8 +15,8 @@ import com.kd.kdspring.book.BookController;
 import com.kd.kdspring.member.MemberController;
 import com.kd.kdspring.member.MemberService;
 
-// This is the Web Server in the microservice architecture.
-// It also contains a small 'monolithic' application with some web controllers
+// Although this runs as a microservice in the microservice architecture, 
+// it internally consists of a small 'monolithic' application with some web controllers
 // as well as a handful of REST APIs with their database backends.
 
 // Tell Boot to search and auto-instantiate Repository beans in these packages
@@ -26,11 +26,20 @@ import com.kd.kdspring.member.MemberService;
 @EntityScan({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 @SpringBootApplication
 @ComponentScan(useDefaultFilters=false)
-public class WebApplication {
+public class LegacyApplication {
 
 	public static void main(String[] args) {
+		// Since all the microservices in our application are in the same project, they would 
+		// automatically use the same configuration. To avoid that, each microservice specifies 
+		// an alternative file by setting the spring.config.name property.
+		//
+		// By default, this line is not needed and Boot looks for configuration settings 
+		// in application.yml or application.properties.
+		// However, by including this line, we tell Boot that our configuration settings 
+		// are in legacy-application.yml instead
+        System.setProperty("spring.config.name", "legacy-application");
 		// Launch the application
-		SpringApplication.run(WebApplication.class, args);
+		SpringApplication.run(LegacyApplication.class, args);
 	}
 
 	@Bean

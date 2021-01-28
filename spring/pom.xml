@@ -3,6 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
+		<!-- Most functionality is inherited from the Spring Boot Parent -->
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.4.1</version>
@@ -24,17 +25,20 @@
 
 	<dependencies>
 		<dependency>
+			<!-- Starter for web applications - REST API and Web UI -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for embedded Tomcat -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-tomcat</artifactId>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for unit tests -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
@@ -47,27 +51,34 @@
 		</dependency>
 
 		<dependency>
+			<!-- Starter for management features like health check -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for Web UI - create views with Thymeleaf template engine -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for data persistence -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
-<!-- 		<dependency>
+		<!-- Starter for in-memory database -->
+		<!-- 		
+		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
-		</dependency> -->
+		</dependency>
+		-->
 
 		<dependency>
+			<!-- Starter for automatic getter/setters for model data objects -->
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<!-- <scope>annotationProcessor</scope> -->
@@ -75,17 +86,20 @@
 		</dependency>
 
 		<dependency>
+			<!-- Starter for MySQL database -->
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for Validation features -->
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
 		<dependency>
+			<!-- Starter for Netflix Eureka for Service Discovery -->
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
 		</dependency>
@@ -94,11 +108,13 @@
 	<build>
 		<plugins>
 			<plugin>
+				<!-- Builds JAR or WAR for deployment -->
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<!-- Skip tests for now when doing a build as they are really slow -->
+			
 			<plugin>
+				<!-- Skip tests for now when doing a build as they are really slow -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>

@@ -1,7 +1,9 @@
 package com.kd.kdspring;
 
 import com.kd.kdspring.registration.RegistrationServer;
-import com.kd.kdspring.web.WebApplication;
+import com.kd.kdspring.account.AccountServer;
+import com.kd.kdspring.web.WebServer;
+import com.kd.kdspring.legacy.LegacyApplication;
 
 // This is the Main class for the entire application. It acts as a
 // central Launcher to start off all the microservices as separate processes.
@@ -13,6 +15,7 @@ import com.kd.kdspring.web.WebApplication;
 public class Main {
     public static void main(String[] args) {
  
+        // Take a server name argument which tells us which service to start
         String serverName = "";
  
         switch (args.length) {
@@ -29,12 +32,14 @@ public class Main {
         if (serverName.equals("registration")) {
             // Start Eureka Service Discovery
             RegistrationServer.main(args);
-        } else if (serverName.equals("addition")) {
-            RegistrationServer.main(args);
-        } else if (serverName.equals("subtraction")) {
-            RegistrationServer.main(args);
+        } else if (serverName.equals("account")) {
+            // Start the Accounts Server service
+            AccountServer.main(args);
         } else if (serverName.equals("web")) {
-            WebApplication.main(args);
+            WebServer.main(args);
+        } else if (serverName.equals("legacy")) {
+            // Start the Legacy Application service (which internally is a monolithic application)
+            LegacyApplication.main(args);
         } else {
             System.out.println("Unknown server type: " + serverName);
         }

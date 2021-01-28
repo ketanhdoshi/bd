@@ -1,0 +1,33 @@
+spring:
+  thymeleaf:
+    cache: false
+    enabled: true 
+    prefix: classpath:/templates/
+    suffix: .html
+
+  application:
+    name: KD Practice Spring
+
+  datasource:
+    url: jdbc:mysql://192.168.65.3:30300/kdtst?useSSL=false
+    username: root
+    password: debezium
+
+  # With the generation GenerationType.AUTO hibernate looks for the hibernate_sequence 
+  # table. This property disables that. 
+  # Alternately change generation to @GeneratedValue(strategy = GenerationType.IDENTITY)
+  jpa:
+    hibernate:
+      use-new-id-generator-mappings: false
+
+server:
+  # HTTP (Tomcat) port for the Legacy Server to listen
+  port: 1120
+  error:
+    path: /error
+    whitelabel:
+      enabled: false 
+
+eureka:
+  client:
+    enabled: false

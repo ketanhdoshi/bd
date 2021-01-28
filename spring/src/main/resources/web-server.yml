@@ -1,0 +1,16 @@
+# Spring properties
+spring:
+  # Set the application name, so the service registers under this 
+  # name and can also be accessed by this name 
+  application:
+     name: web-service
+
+# Discovery Server Access
+eureka:
+  client:
+    # URL of the Eureka Discovery Server
+    serviceUrl:
+      defaultZone: http://localhost:1111/eureka/
+
+# Web Server listens on the default HTTP (Tomcat) port 8080
+

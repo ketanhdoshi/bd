@@ -1,4 +1,4 @@
-package com.kd.kdspring.web;
+package com.kd.kdspring.legacy;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
