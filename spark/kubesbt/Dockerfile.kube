@@ -1,4 +1,4 @@
-# Dockerfile used to build kd/sbtkube
+# Dockerfile used to build kd/vskube
 #
 # Add Docker CLI, Kubectl and Helm so we can deploy to K8s directly from a remote dev container
 # https://github.com/Microsoft/vscode-dev-containers/tree/master/containers/kubernetes-helm

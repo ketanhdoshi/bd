@@ -149,13 +149,6 @@ object MyUtil {
       schemaRegistryUrl: String,
       offset: Integer = 0) : DataFrame = {
 
-/*     val schemaRegistryConfs = Map(
-      SchemaManager.PARAM_SCHEMA_REGISTRY_URL          -> schemaRegistryUrl,
-      SchemaManager.PARAM_SCHEMA_REGISTRY_TOPIC        -> topic,
-      SchemaManager.PARAM_VALUE_SCHEMA_NAMING_STRATEGY -> SchemaManager.SchemaStorageNamingStrategies.TOPIC_NAME,
-      SchemaManager.PARAM_VALUE_SCHEMA_ID              -> "latest" // otherwise, just specify an id
-    ) */
-
     val schemaManager = SchemaManagerFactory.create(Map(AbrisConfig.SCHEMA_REGISTRY_URL -> schemaRegistryUrl))
     val schemaExists = schemaManager.exists(SchemaSubject.usingTopicNameStrategy("foo"))
 
@@ -176,7 +169,6 @@ object MyUtil {
       .option("kafka.security.protocol", "SASL_PLAINTEXT")
       .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
       .load()
-      // .fromConfluentAvro("value", None, Some(schemaRegistryConfs))(RETAIN_SELECTED_COLUMN_ONLY)
 
     val abrisConfig = AbrisConfig
       .fromConfluentAvro
@@ -201,13 +193,6 @@ object MyUtil {
   // register schema with topic name strategy
   def registerSchema(topic: String, schema: Schema, schemaManager: SchemaManager): Int = {
     val subject = SchemaSubject.usingTopicNameStrategy(topic, isKey=false) // Use isKey=true for the key schema and isKey=false for the value schema
-
-    val ss = schema.toString()
-    val sub = subject.asString
-    println (s"==== ==================== $topic == $sub" )
-    println (ss)
-    println (s"==== ====================")
-
     schemaManager.register(subject, schema)
   }
 
@@ -222,15 +207,6 @@ object MyUtil {
       mode: String,
       checkpointLocation: String, 
       df:DataFrame) : StreamingQuery = {
-
-    // Name of schema and namespace to create under the subject
-    /* val destSchema = "kdschema"
-    val destSchemaNamespace = "kdnamespace" */
-
-    /* val schemaRegistryConfs = Map(
-      SchemaManager.PARAM_SCHEMA_REGISTRY_URL          -> schemaRegistryUrl,
-      SchemaManager.PARAM_VALUE_SCHEMA_NAMING_STRATEGY -> SchemaManager.SchemaStorageNamingStrategies.TOPIC_NAME
-    ) */
 
     val schemaRegistryClientConfig = Map(AbrisConfig.SCHEMA_REGISTRY_URL -> schemaRegistryUrl)
     val schemaManager = SchemaManagerFactory.create(schemaRegistryClientConfig)
@@ -251,7 +227,6 @@ object MyUtil {
 
     // Write the stream to Kafka, after serialising it in Confluent's Avro format. Create the
     // schema definition in the Schema Registry if it doesn't exist
-    // val kafkaOutput = df.toConfluentAvro(topic, "kdis", "kdisns")(schemaRegistryConfs)
     val kafkaOutput = dfavro
       .writeStream
       .format("kafka")
@@ -558,7 +533,7 @@ class StreamsApp(
     }
 
     // and wrap that function into a Spark UDF
-    val agoUdf: UserDefinedFunction = udf(agoFunc, DataTypes.LongType)
+    val agoUdf: UserDefinedFunction = udf(agoFunc)
 
     // Apply the UDF to the 'msgtime' column to create a new column 'ago'
     val df1 = df.withColumn("ago", agoUdf.apply(col("msgtime")))
@@ -666,7 +641,7 @@ class StreamsApp(
   private def doStreaming (): Unit = {
     import spark.implicits._
 
-    var dfEvents = MyUtil.readKafkaAvro (spark, brokers, "demo-events", schemaRegistryUrl, offset=2)
+    var dfEvents = MyUtil.readKafkaAvro (spark, brokers, eventsTopic, schemaRegistryUrl, offset=5)
     dfEvents = dfEvents.transform (MyUtil.LongToTimestamp ("event_time", "event_ts"))
 
     //val dfJoin = doJoin(dfEvents)
@@ -674,9 +649,13 @@ class StreamsApp(
     val dfStateful = doStateful(dfEvents)
     val dfOut = dfStateful
 
-    val userDf = dfEvents.select($"customer_id", $"event_type", $"event_ts").where("customer_id > 10 and customer_id < 15")
-    val consoleOutputInp = MyUtil.writeConsole ("append", userDf)
-    val consoleOutput = MyUtil.writeConsole ("append", dfOut)
+    val userDf = dfEvents.select($"customer_id", $"event_type", $"event_ts").where("customer_id > 8 and customer_id < 10")
+    val kafkaOutputJson = MyUtil.writeKafkaJson (brokers, "testDoStreamingOut", "append", 
+                                      dataDir + "checkpoints_stream", dfStateful, "user_id")
+    
+    // Temporarily comment it out because writing a stream to the console causes exceptions for some strange reason
+    //val consoleOutput = MyUtil.writeConsole ("append", dfOut)
+    //val consoleOutputInp = MyUtil.writeConsole ("append", userDf)
   }
 
   //-------------------------------------------
@@ -706,16 +685,16 @@ class StreamsApp(
       .add("EMAIL", DataTypes.StringType)
       .add("MESSAGE", DataTypes.StringType)
 
-    val dfJson = MyUtil.readKafkaJson (spark, brokers, "UNHAPPY_PLATINUM_CUSTOMERS", custSchema)
+    val dfJson = MyUtil.readKafkaJson (spark, brokers, "testDoJsonInp", custSchema)
     val dfflat = calcAgo (dfJson)
 
     // Compute aggregates
     val dfcount = dfflat.groupBy ($"FULL_NAME").count()
 
     println(s"========== SHOW ==========" )
-    val kafkaOutputJson = MyUtil.writeKafkaJson (brokers, "kdcount", "complete", 
+    val kafkaOutputJson = MyUtil.writeKafkaJson (brokers, "testDoJsonOut", "complete", 
                                       dataDir + "checkpoints_json", dfcount, "FULL_NAME")
-    val consoleOutputJson = MyUtil.writeConsole ("complete", dfcount)
+    val consoleOutputJson = MyUtil.writeConsole ("append", dfflat)
   }
 
   //-------------------------------------------
@@ -842,11 +821,11 @@ class StreamsApp(
     // the same??
     // ***** TODO - Make sure we get output for both the Avro and Json Streaming Queries
 
-    doAvro()
-    //doJson()
+    //doAvro()
+    // doJson()
     //doNestedJson()
-    //doBatch()
-    //doStreaming()
+    // doBatch()
+    doStreaming()
 
     // Read a Kafka Avro stream and write it out to a Kafka JSON stream so that it can
     // be ingested by ElasticSearch for a Kibana dashboard

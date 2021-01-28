@@ -1,5 +1,7 @@
-﻿# Base image with Java and utilities to download/extract Spark
-FROM  openjdk:8-jre-alpine
+# Dockerfile used to build kd/kubesbtspark
+#
+# Pull base image
+FROM  kd/kubesbt:latest
 
 ENV SPARK_VERSION 3.0.1
 ENV SPARK_INSTALL /usr/local
@@ -13,7 +15,7 @@ ENV SPARK_TGZ $SPARK_EXTRACT_DIR.tgz
 RUN apk --update --no-cache add wget tar bash curl
 
 # Download Spark tarfile
-#RUN curl -s http://mirrors.estointernet.in/apache/spark/spark-3.0.1/spark-3.0.1-bin-hadoop3.2.tgz
+#RUN curl -s https://archive.apache.org/dist/spark/spark-3.0.1/spark-3.0.1-bin-hadoop3.2.tgz
 
 # Copy the Spark tarfile
 COPY ./$SPARK_TGZ /
@@ -22,6 +24,3 @@ COPY ./$SPARK_TGZ /
 RUN tar -xzf /$SPARK_TGZ && \
     mv $SPARK_EXTRACT_DIR $SPARK_HOME && \
     rm /$SPARK_TGZ
-
-# Set the working dir so we land there when starting any interactive bash in the container
-WORKDIR $SPARK_HOME

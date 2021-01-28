@@ -6,8 +6,10 @@ metadata:
 spec:
   type: Scala
   mode: cluster
-  image: "gcr.io/spark-operator/spark:v3.0.0"
-  imagePullPolicy: Always
+  #image: "gcr.io/spark-operator/spark:v3.0.0"
+  #imagePullPolicy: Always
+  image: "kd/spark:3.0.1"
+  imagePullPolicy: Never
   mainClass: com.ketan.KafkaInt
   mainApplicationFile: "local:///tmp/dev/kafkaint/target/scala-2.12/kafka-integration_2.12-1.0.jar"
   arguments: 
@@ -57,6 +59,7 @@ spec:
       local:///tmp/ivy/jars/org.xerial.snappy_snappy-java-1.1.7.5.jar,\
       local:///tmp/ivy/jars/za.co.absa_abris_2.12-4.0.1.jar"
     spark.jars.ivy: "/tmp/ivy"
+    spark.kubernetes.driverEnv.HTTP2_DISABLE: "true"
   restartPolicy:
     type: Never
   volumes:
@@ -82,7 +85,7 @@ spec:
     # For more info https://github.com/GoogleCloudPlatform/spark-on-k8s-operator/issues/581 
 #    cores: 1
     coreRequest: 100m
-    coreLimit: "1200m"
+    coreLimit: 400m
     memory: "512m"
     labels:
       version: 3.0.0
@@ -96,9 +99,13 @@ spec:
         mountPath: "/tmp/dev"
       - name: "ivy"
         mountPath: "/tmp/ivy"
+    env:
+      - name: HTTP2_DISABLE
+        value: "true"
   executor:
 #    cores: 1
     coreRequest: 100m
+    coreLimit: 400m
     instances: 1
     memory: "512m"
     labels:

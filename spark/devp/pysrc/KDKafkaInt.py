@@ -2,11 +2,23 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 import datetime;
+import sys
 
 spark = SparkSession.builder.appName("Kafka Integration").getOrCreate()
 
-brokers = "kafka:29092"
-topic = "UNHAPPY_PLATINUM_CUSTOMERS"
+# Oddly, owing to the way Spark invokes Python programs via a Python Runner,
+# the first argument argv[0] is the program name. So the real arguments start
+# from argv[1]
+brokers = sys.argv[1] # "kafka:29092"
+topic = sys.argv[2] # "UNHAPPY_PLATINUM_CUSTOMERS"
+outTopic = sys.argv[3] # "kdcount"
+dataDir = sys.argv[4] + "/" # /tmp/data
+
+print("args are ", len(sys.argv), sys.argv[0], brokers, topic, outTopic, dataDir)
+
+# Read from the beginning (ie. 'earliest' offset) or from a specific number offset
+offset=0
+startingOffsets = "earliest" if (offset == 0) else f"""{{ "{topic}": {{ "0": {offset} }} }}"""
 
 # Subscribe to 1 topic
 # read data from the start of the stream
@@ -15,7 +27,10 @@ df = spark \
   .format("kafka") \
   .option("kafka.bootstrap.servers", brokers) \
   .option("subscribe", topic) \
-  .option("startingOffsets", "earliest") \
+  .option("startingOffsets", startingOffsets) \
+  .option("kafka.sasl.mechanism", "PLAIN") \
+  .option("kafka.security.protocol", "SASL_PLAINTEXT") \
+  .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""") \
   .load()
 
 # The Key and Value are binary data, so deserialise them into strings
@@ -73,8 +88,11 @@ dfout = dfcount.selectExpr( \
 kafkaOutput = dfout.writeStream \
         .format("kafka") \
         .option("kafka.bootstrap.servers", brokers) \
-        .option("topic", "kdcount") \
-        .option("checkpointLocation", "/data/checkpoints") \
+        .option("topic", outTopic) \
+        .option("kafka.sasl.mechanism", "PLAIN") \
+        .option("kafka.security.protocol", "SASL_PLAINTEXT") \
+        .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""") \
+        .option("checkpointLocation", dataDir + "checkpoints_pykint") \
         .outputMode("complete") \
         .start()
 

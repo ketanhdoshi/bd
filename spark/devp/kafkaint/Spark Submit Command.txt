@@ -1,0 +1,32 @@
+ ./bin/spark-submit \
+    --master k8s://https://kubernetes.docker.internal:6443 \
+    --deploy-mode cluster \
+    --name kafkaint \
+    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,za.co.absa:abris_2.12:4.0.1 \
+    --repositories https://packages.confluent.io/maven \
+    --class com.ketan.KafkaInt \
+    --conf spark.kubernetes.namespace=spark-app \
+    --conf spark.kubernetes.driver.volumes.hostPath.ivy.mount.path=/tmp/ivy \
+    --conf spark.kubernetes.driver.volumes.hostPath.ivy.options.path=/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark/kiivy \
+    --conf spark.kubernetes.driver.volumes.hostPath.devp.mount.path=/tmp/devp \
+    --conf spark.kubernetes.driver.volumes.hostPath.devp.options.path=/run/desktop/mnt/host/c/kd/dev/bd/spark/devp \
+    --conf spark.kubernetes.driver.volumes.hostPath.data.mount.path=/tmp/data \
+    --conf spark.kubernetes.driver.volumes.hostPath.data.options.path=/run/desktop/mnt/host/c/kd/dev/bd/spark/data \
+    --conf spark.kubernetes.executor.volumes.hostPath.ivy.mount.path=/tmp/ivy \
+    --conf spark.kubernetes.executor.volumes.hostPath.ivy.options.path=/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark/kiivy \
+    --conf spark.kubernetes.executor.volumes.hostPath.devp.mount.path=/tmp/devp \
+    --conf spark.kubernetes.executor.volumes.hostPath.devp.options.path=/run/desktop/mnt/host/c/kd/dev/bd/spark/devp \
+    --conf spark.kubernetes.executor.volumes.hostPath.data.mount.path=/tmp/data \
+    --conf spark.kubernetes.executor.volumes.hostPath.data.options.path=/run/desktop/mnt/host/c/kd/dev/bd/spark/data \
+    --conf spark.jars.ivy=/tmp/ivy \
+    ####--conf spark.executor.extraClassPath=local:///tmp/ivy/jars \
+    ####--conf spark.jars=local:///tmp/ivy/jars/org.apache.spark_spark-sql-kafka-0-10_2.12-3.0.0.jar,local:///tmp/ivy/jars/org.apache.kafka_kafka-clients-2.4.1.jar \
+    --conf spark.executor.instances=1 \
+    --conf spark.kubernetes.driver.request.cores=100m \
+    --conf spark.kubernetes.executor.request.cores=100m \
+    --conf spark.kubernetes.container.image=kd/spark:3.0.1 \
+    local:///tmp/devp/kafkaint/target/scala-2.12/kafka-integration_2.12-1.0.jar \
+    kafka.kd-confluent.svc.cluster.local:9071 \
+    http://schemaregistry.kd-confluent.svc.cluster.local:8081 \
+    test1 \
+    /tmp/data

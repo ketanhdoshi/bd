@@ -1,8 +1,9 @@
 from pyspark.sql import SparkSession
 import os
+import sys
 
 SPARK_HOME = os.environ['SPARK_HOME']
-logFile = SPARK_HOME + "/README.md"  # Should be some file on your system
+logFile = sys.argv[0]  # Should be some file on your system
 spark = SparkSession.builder.appName("SimpleApp").getOrCreate()
 logData = spark.read.text(logFile).cache()
 

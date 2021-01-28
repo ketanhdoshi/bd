@@ -1,26 +1,27 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: kd-kafkaavro
+  name: kd-py-kafkaint
   namespace: spark-app
 spec:
-  type: Scala
+  type: Python
+  pythonVersion: "3"
   mode: cluster
-  image: "gcr.io/spark-operator/spark:v3.0.0"
+  image: "gcr.io/spark-operator/spark-py:v3.0.0"
   imagePullPolicy: Always
-  mainClass: com.ketan.KafkaAvro
-  mainApplicationFile: "local:///tmp/dev/kafkaavro/target/scala-2.12/kafka-avro_2.12-1.0.jar"
+  mainApplicationFile: local:///tmp/dev/pysrc/KDKafkaInt.py
   arguments: 
     - "kafka.kd-confluent.svc.cluster.local:9071"
+    - "testDoJsonInp"
+    - "testDoJsonOut"
     - "/tmp/data"
   deps:
     packages:
       - org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0
-      - org.apache.spark:spark-avro_2.12:3.0.0
   sparkVersion: "3.0.0"
   sparkConf:
-    # NB: No spaces between jars (after the comma), otherwise we get errors
-    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,org.apache.spark:spark-avro_2.12:3.0.0"
+    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0"
+    spark.jars.ivy: "/tmp/ivy"
     spark.jars: "local:///tmp/ivy/jars/org.apache.spark_spark-sql-kafka-0-10_2.12-3.0.0.jar,\
       local:///tmp/ivy/jars/org.apache.kafka_kafka-clients-2.4.1.jar,\
       local:///tmp/ivy/jars/org.apache.commons_commons-pool2-2.6.2.jar,\
@@ -29,16 +30,10 @@ spec:
       local:///tmp/ivy/jars/org.lz4_lz4-java-1.7.1.jar,\
       local:///tmp/ivy/jars/org.slf4j_slf4j-api-1.7.30.jar,\
       local:///tmp/ivy/jars/org.spark-project.spark_unused-1.0.0.jar,\
-      local:///tmp/ivy/jars/org.apache.spark_spark-token-provider-kafka-0-10_2.12-3.0.0.jar,\
-      local:///tmp/ivy/jars/org.apache.spark_spark-avro_2.12-3.0.0.jar"
-    spark.jars.ivy: "/tmp/ivy"
+      local:///tmp/ivy/jars/org.apache.spark_spark-token-provider-kafka-0-10_2.12-3.0.0.jar"
   restartPolicy:
     type: Never
   volumes:
-    - name: "test-volume"
-      hostPath:
-        path: "/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark/tmp"
-        type: Directory
     - name: "data"
       hostPath:
         path: "/run/desktop/mnt/host/c/kd/dev/bd/spark/data"
@@ -63,8 +58,6 @@ spec:
       version: 3.0.0
     serviceAccount: sparkop-spark
     volumeMounts:
-      - name: "test-volume"
-        mountPath: "/tmp"
       - name: "data"
         mountPath: "/tmp/data"
       - name: "dev"
@@ -79,8 +72,6 @@ spec:
     labels:
       version: 3.0.0
     volumeMounts:
-      - name: "test-volume"
-        mountPath: "/tmp"
       - name: "data"
         mountPath: "/tmp/data"
       - name: "dev"
