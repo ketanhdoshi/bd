@@ -11,10 +11,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
-import com.kd.kdspring.book.BookController;
-import com.kd.kdspring.member.MemberController;
-import com.kd.kdspring.member.MemberService;
-
 // Although this runs as a microservice in the microservice architecture, 
 // it internally consists of a small 'monolithic' application with some web controllers
 // as well as a handful of REST APIs with their database backends.
@@ -25,7 +21,12 @@ import com.kd.kdspring.member.MemberService;
 // Tell Boot to search and auto-instantiate Entity beans in these packages
 @EntityScan({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 @SpringBootApplication
-@ComponentScan(useDefaultFilters=false)
+@ComponentScan(basePackages = {
+	"com.kd.kdspring.legacy",
+	"com.kd.kdspring.book", 
+	"com.kd.kdspring.member", 
+	"com.kd.kdspring.exception"
+})
 public class LegacyApplication {
 
 	public static void main(String[] args) {
@@ -56,31 +57,5 @@ public class LegacyApplication {
 
 		};
 	}
-
-	@Bean
-    public HelloController helloController() {
-        return new HelloController();
-    }
-
-	@Bean
-    public SimpleController simpleController() {
-        return new SimpleController();
-    }
-
-	@Bean
-    public BookController bookController() {
-        return new BookController();
-    }
-
-	@Bean
-    public MemberController memberController() {
-        return new MemberController();
-    }
-
-	@Bean
-    public MemberService memberService() {
-        return new MemberService();
-    }
-
 }
 

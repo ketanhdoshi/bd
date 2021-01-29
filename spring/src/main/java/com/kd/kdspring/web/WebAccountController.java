@@ -49,11 +49,13 @@ public class WebAccountController {
 
         if (account == null) { // no such account
             model.addAttribute("number", accountNumber);
+            // Return a view name, which is in 'account.html'
             return "account";
         }
 
         logger.info("web-service byNumber() found: " + account);
         model.addAttribute("account", account);
+        // Return a view name, which is in 'account.html'
         return "account";
     }
 

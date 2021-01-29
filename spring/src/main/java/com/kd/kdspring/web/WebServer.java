@@ -30,6 +30,11 @@ public class WebServer {
         SpringApplication.run(WebServer.class, args);
     }
 
+    // Because we have turned off ComponentScan above, we have to define these methods
+    // below to explicitly create and instantiate these Beans. By default, ComponentScan
+    // is turned on, and Spring Boot automatically scans all packages and finds and
+    // auto-instantatiates these Beans.
+
     // The RestTemplate bean will be intercepted and auto-configured by Spring Cloud (due
     // to the @LoadBalanced annotation) to use a custom HttpRequestClient that uses Netflix
     // Ribbon to do the microservice lookup. Ribbon is also a load-balancer so if you have 

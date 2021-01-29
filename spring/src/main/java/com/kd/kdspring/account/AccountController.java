@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import com.kd.kdspring.exception.AccountNotFoundException;
+
 @RestController
 public class AccountController {
 
@@ -22,7 +24,7 @@ public class AccountController {
 	public AccountController(AccountRepository accountRepository) {
 		this.accountRepository = accountRepository;
 
-		//logger.info("AccountRepository says system has " + accountRepository.countAccounts() + " accounts");
+		logger.info("AccountRepository says system has " + accountRepository.countAccounts() + " accounts");
 	}
 
 	/**
@@ -39,13 +41,11 @@ public class AccountController {
 		Account account = accountRepository.findByNumber(accountNumber);
 		logger.info("accounts-service byNumber() found: " + account);
 
-		return account;
-
-/* 		if (account == null)
+		if (account == null)
 			throw new AccountNotFoundException(accountNumber);
 		else {
 			return account;
 		}
- */	}
+	}
 
 }

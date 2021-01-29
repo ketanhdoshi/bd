@@ -1,4 +1,4 @@
-package com.kd.kdspring;
+package com.kd.kdspring.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
@@ -10,9 +10,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import com.kd.kdspring.exception.BookNotFoundException;
-import com.kd.kdspring.exception.BookIdMismatchException;
-
+// Global centralised Exception handler for the whole application (including all microservices)
 @ControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -22,7 +20,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BookNotFoundException.class)
     protected ResponseEntity<Object> handleNotFound(Exception ex, WebRequest request) {
-        return handleExceptionInternal(ex, "Book not found", new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+
+        // An example of providing a custom Error class with more details
+        // If we use this approach everywhere, then comment out the section below where we
+        // override handleExceptionInternal
+        ErrorInfo error = new ErrorInfo(HttpStatus.NOT_FOUND, "Book not found");
+        return handleExceptionInternal(ex, error, new HttpHeaders(), HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler({
@@ -31,8 +34,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         DataIntegrityViolationException.class
     })
     public ResponseEntity<Object> handleBadRequest(Exception ex, WebRequest request) {
-        return handleExceptionInternal(ex, ex.getLocalizedMessage(), 
-                            new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+        return handleExceptionInternal(ex, "Book ID Mismatch", new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
+
+/*  @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        ErrorInfo error = new ErrorInfo(25, "kd message");
+        return super.handleExceptionInternal(ex, error, headers, status, request);
+     } */
   
 }

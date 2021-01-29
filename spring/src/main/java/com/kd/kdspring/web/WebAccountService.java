@@ -36,6 +36,7 @@ public class WebAccountService {
     public Account findByNumber(String accountNumber) {
         logger.info("findByNumber() invoked: for " + accountNumber);
         try {
+            // REST call to back-end Account microservice
             return restTemplate.getForObject(serviceUrl + "/accounts/{number}", Account.class, accountNumber);
         } catch (Exception e) {
             logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
