@@ -10,6 +10,8 @@ spec:
   image: "gcr.io/spark-operator/spark-py:v3.0.0"
   imagePullPolicy: Always
   mainApplicationFile: local:///tmp/dev/pysrc/KDNestedJson.py
+  arguments: 
+    - "/tmp/dev"
   sparkVersion: "3.0.0"
   restartPolicy:
     type: Never

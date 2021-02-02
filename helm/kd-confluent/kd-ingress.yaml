@@ -1,3 +1,15 @@
+#
+# UI-based services have to use only host-based routing with a root path ('/')
+# REST-based services are using path-based routing (although they could have 
+# used host-based as well). Since they all define paths with a prefix ('/sr')
+# and not root paths ('/'), they must also use a Rewrite annotation.
+#
+# Rewrite annotations require a regular expression with a capture group eg. (/|$)
+# and (.*) to match sections of the URL entered by the user.
+#
+# Ingress rules must be defined within the same namespace as the corresponding
+# service
+#
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -7,6 +19,7 @@ metadata:
   namespace: kd-confluent
 spec:
   rules:
+  # Add this to DNS or local hosts file
   - host: cc.kd
     http:
       paths:
@@ -64,6 +77,7 @@ metadata:
   namespace: default
 spec:
   rules:
+  # Add this to DNS or local hosts file
   - host: kibana.kd
     http:
       paths:
