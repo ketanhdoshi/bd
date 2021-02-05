@@ -16,6 +16,8 @@ public class SimpleController {
 
     @RequestMapping("/")
     public String homePage(Model model) {
+        // Add the application name into the model object so that it can be
+        // accessed by the view template
         model.addAttribute("appName", appName);
         // The view is defined in a 'home.html' page
         return "home";

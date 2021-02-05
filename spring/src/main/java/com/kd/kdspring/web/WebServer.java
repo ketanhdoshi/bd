@@ -17,8 +17,8 @@ import org.springframework.web.client.RestTemplate;
 // (although that is not necessary since we offers no services of our own)
 @EnableDiscoveryClient
 // Disable Spring Boot from scanning folders for Bean classes and auto-instantiating them
-// because we do it explicitly here instead
-@ComponentScan(useDefaultFilters = false) 
+// because we do it explicitly here instead. We only scan for the security Beans.
+@ComponentScan(basePackages = "com.kd.kdspring.web.security")
 public class WebServer {
     // URL uses the logical name of all microservices (case insensitive)
     public static final String ACCOUNT_SERVICE_URL = "http://ACCOUNT-SERVICE";
@@ -66,5 +66,4 @@ public class WebServer {
     public WebAccountController accountsController() {
         return new WebAccountController(accountService());
     }
-    
 }

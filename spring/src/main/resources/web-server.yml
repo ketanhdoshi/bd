@@ -14,3 +14,8 @@ eureka:
 
 # Web Server listens on the default HTTP (Tomcat) port 8080
 
+# Secret key for signing JWT tokens
+jwt:
+  secret: challokd
+  jwtExpirationInMs: 3600000  # 1 hour in milliseconds
+

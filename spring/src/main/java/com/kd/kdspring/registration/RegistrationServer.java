@@ -16,7 +16,13 @@ import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 // Start Netflix Eureka Server for Service Registration and Discovery.
 // It runs as a standalone application and listens on a Tomcat port as per
 // its configuration settings.
-@SpringBootApplication
+
+// Disable Security and Actuator Security, so that services don't need to 
+// authenticate to register
+@SpringBootApplication (exclude = {
+  org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+  org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
+})
 @EnableEurekaServer
 public class RegistrationServer {
     public static void main(String[] args) {
