@@ -825,7 +825,42 @@ class StreamsApp(
     // doJson()
     //doNestedJson()
     // doBatch()
-    doStreaming()
+    //doStreaming()
+
+    Session.foo()
+    val actionDf = Session.getData(spark, dataDir)
+    val sessionsDf = Session.doStateful (spark, actionDf)
+
+    /* For some reason neither ther output to memory nor the output to file
+    produces any output. Both are empty. The output to Kafka works fine so we'll
+    continue to use that
+
+    val debugOutput = sessionsDf
+            .writeStream
+            .queryName("device_sessions")
+            .format("memory")
+            .outputMode("append")
+            .start()
+
+    // Since the stream write is asynchronous, we may have to wait a little
+    // before data starts appearing in the in-memory table
+    while (debugOutput.isActive) {
+      Thread.sleep (20000)
+      spark.sql("select * from device_sessions").show()
+    }
+
+    val outDir = dataDir + "/out_session"
+    val sessionsFile = sessionsDf
+          .writeStream
+          .outputMode("append")
+          .format("json")
+          .trigger(Trigger.ProcessingTime("120 seconds"))
+          .option("path", outDir)
+          .option("checkpointLocation", outDir + "/checkpoint_session")
+          .start() */
+
+    val kafkaOutputJson = MyUtil.writeKafkaJson (brokers, "json_topic", "append", 
+                                       dataDir + "checkpoints_json", sessionsDf, "user_id")
 
     // Read a Kafka Avro stream and write it out to a Kafka JSON stream so that it can
     // be ingested by ElasticSearch for a Kibana dashboard

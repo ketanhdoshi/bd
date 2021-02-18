@@ -9,6 +9,8 @@ spark/devp/*/.metals/
 spark/devp/*/.vscode/
 spark/devp/kafkaavro/src/main/scala/OLD KafkaAvro.scala.txt
 spark/devp/kafkaint/src/main/scala/TEMP KIScala
+spark/devp/pydemo/__pycache__/
+spark/data/channel.parquet/
 spark/Untitled-1.txt
 kafka/plugins/
 kafka/scripts/TEMP fileNestedJsonInsert.txt
