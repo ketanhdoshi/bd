@@ -55,21 +55,6 @@ public class WebAccountController {
         return "login";
     }
 
-    @GetMapping("/kdlogin")
-    public String loginPage(Model model) {
-        model.addAttribute("authRequest", new AuthRequest());
-        // The view is defined in a 'login.html' page
-        return "kdlogin";
-    }
-
-    @PostMapping("/kdlogin")
-	public String doLogin(@ModelAttribute AuthRequest authRequest, Model model)
-	{
-        logger.info("dologin() invoked: " + authRequest.getUsername() + authRequest.getPassword());
-        model.addAttribute("appName", "DoLogin");
-		return "home";
-	}
-
     // ------------------------------------------
     // Show list of accounts 
     // !!!!!!right now it just shows a home page

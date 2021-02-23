@@ -11,39 +11,43 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
 
+// ------------------------------------------
 // Utility to handle creation and validation of JWT tokens.
+// ------------------------------------------
 @Service
 public class JwtUtil {
 
 	private String secret;
 	private int jwtExpirationInMs;
 
+	// ------------------------------------------
 	// Get JWT secret key from properties
+	// ------------------------------------------
 	@Value("${jwt.secret}")
 	public void setSecret(String secret) {
 		this.secret = secret;
 	}
 	
+	// ------------------------------------------
 	// Get token JWT expiration duration from properties
+	// ------------------------------------------
 	@Value("${jwt.jwtExpirationInMs}")
 	public void setJwtExpirationInMs(int jwtExpirationInMs) {
 		this.jwtExpirationInMs = jwtExpirationInMs;
 	}
 
-	// Generate token for user. Called during Login.
+/* 	// Generate token for user. Called during Login.
 	public String generateToken(UserDetails userDetails) {
 		Map<String, Object> claims = new HashMap<>();
 
@@ -60,9 +64,11 @@ public class JwtUtil {
 
 		// Generate the token using the claims the user name.
 		return doGenerateToken(claims, userDetails.getUsername());
-	}
+	} */
 
+	// ------------------------------------------
 	// Generate token for user. Called during Login.
+	// ------------------------------------------
 	public String createToken (Collection<? extends GrantedAuthority> roles, String username) {
 
 		// If the user has the Admin role, add an Admins claim into the token. 
@@ -79,6 +85,9 @@ public class JwtUtil {
 		return doGenerateToken(claims, username);
 	}
 
+	// ------------------------------------------
+	// Call the JWT library to generate a token with the given values
+	// ------------------------------------------
 	private String doGenerateToken(Map<String, Object> claims, String subject) {
 		return Jwts.builder()
 				.setClaims(claims)
@@ -89,7 +98,9 @@ public class JwtUtil {
 				.compact();
 	}
 
+	// ------------------------------------------
 	// Validate the previously generated JWT token that the client passes in with every API request.
+	// ------------------------------------------
 	public boolean validateToken(String authToken) {
 		try {
 			// Jwt token has not been tampered with
@@ -103,12 +114,16 @@ public class JwtUtil {
 		}
 	}
 	
+	// ------------------------------------------
+	// ------------------------------------------
 	public String getUsernameFromToken(String token) {
 		Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
 
 		return claims.getSubject();
 	}
 
+	// ------------------------------------------
+	// ------------------------------------------
 	public List<SimpleGrantedAuthority> getRolesFromToken(String authToken) {
 		List<SimpleGrantedAuthority> roles = null;
 		Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(authToken).getBody();

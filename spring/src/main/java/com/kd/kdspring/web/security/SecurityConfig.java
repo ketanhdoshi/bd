@@ -46,8 +46,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		final MyJwtAuthenticationFilter filter = new MyJwtAuthenticationFilter();
 		filter.setAuthenticationManager(authenticationManager());
 		// By default, UsernamePasswordAuthenticationFilter listens to "/login" path. 
-		// !!!!!!!!! In our case, we use a different path. So, we need to override the defaults.
-    	// filter.setFilterProcessesUrl("/api/auth/login");
+		// We can override the defaults if we want to use a different path.
+    	// filter.setFilterProcessesUrl("/kdlogin");
     	return filter;
 	}
 
@@ -69,20 +69,25 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		return super.authenticationManagerBean();
 	}
-	
-/* 	@Override
+
+	/* @Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http
+		http.csrf().disable()
 			.authorizeRequests()
 				.antMatchers("/", "/home").permitAll()
 				.anyRequest().authenticated()
-				.and()
-			.formLogin()
+			//.and().exceptionHandling()
+			//	.authenticationEntryPoint(unauthorizedHandler)
+			.and().formLogin()
 				.loginPage("/login")
 				.permitAll()
 				.and()
 			.logout()
 				.permitAll();
+	
+		// Add our custom filter to validate the JWT tokens with every request
+		http.addFilterBefore(customJwtAuthorisationFilter, 
+				UsernamePasswordAuthenticationFilter.class);
 	} */
 
 	// ------------------------------------------
@@ -99,7 +104,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 				// All requestes for accounts require Admin role
 				.antMatchers("/accounts/**").hasRole("ADMIN")
 				// All requests to the root page require User or Admin Role
-				.antMatchers("/").hasAnyRole("ADMIN","USER")
+				//.antMatchers("/").hasAnyRole("ADMIN","USER")
+				.antMatchers("/").permitAll()
 				// Allow anyone including unauthenticated users to access the login URL
 				.antMatchers("/authenticate").permitAll()
 				// All other requests must be authenticated
@@ -107,27 +113,25 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 			// Add our Custom filter to handle Login POST
 			.and().addFilter(getJwtAuthenticationFilter())
 			// When JWT validation fails return HTTP error using our custom Entry Point
-			.exceptionHandling()
-				.authenticationEntryPoint(unauthorizedHandler)
+			// !!!!!!!! Disable this as it blocks automatic redirecting of .formLogin to login page
+			// .exceptionHandling()
+			// 	.authenticationEntryPoint(unauthorizedHandler)
 			// Use stateless session; session won't be used to store user's state.
-			.and().sessionManagement()
+			.sessionManagement()
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			/* .and().formLogin()
-				.loginPage("/kdlogin")
-				.loginProcessingUrl("/kdlogin")
-				.permitAll()
-			.and().logout()
-				.permitAll(); */
 			// Display a Custom Login Form at this URL
+			// !!!!!!! We could get rid of this section under formLogin
 			.and().formLogin()
 				.loginPage("/login")
 				.permitAll()
-				.and()
-			.logout()
-				.permitAll();	
+			.and().logout()
+				.permitAll()
+			.and().oauth2Login()
+				.loginPage("/login")
+				.permitAll();
 
-			// Add our custom filter to validate the JWT tokens with every request
-			httpSecurity.addFilterBefore(customJwtAuthorisationFilter, 
+		// Add our custom filter to validate the JWT tokens with every request
+		httpSecurity.addFilterBefore(customJwtAuthorisationFilter, 
 				UsernamePasswordAuthenticationFilter.class);
 		}
 }

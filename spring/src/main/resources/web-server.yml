@@ -4,6 +4,14 @@ spring:
   # name and can also be accessed by this name 
   application:
      name: web-service
+  # Oauth Github settings
+  security:  
+    oauth2:  
+      client:  
+        registration:  
+          github:  
+            clientId: 99bc2dfb796f77af706e  
+            clientSecret: c7d072014a22de5249761cd36a6a2c9feec232e6
 
 # Discovery Server Access
 eureka:
@@ -18,4 +26,5 @@ eureka:
 jwt:
   secret: challokd
   jwtExpirationInMs: 3600000  # 1 hour in milliseconds
+
 
