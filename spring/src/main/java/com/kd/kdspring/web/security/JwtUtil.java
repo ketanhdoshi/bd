@@ -62,9 +62,31 @@ public class JwtUtil {
 		return doGenerateToken(claims, userDetails.getUsername());
 	}
 
+	// Generate token for user. Called during Login.
+	public String createToken (Collection<? extends GrantedAuthority> roles, String username) {
+
+		// If the user has the Admin role, add an Admins claim into the token. 
+		// Similarly if the user has User role, add an User claim into the token
+		Map<String, Object> claims = new HashMap<>();
+		if (roles.contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
+			claims.put("isAdmin", true);
+		}
+		if (roles.contains(new SimpleGrantedAuthority("ROLE_USER"))) {
+			claims.put("isUser", true);
+		}
+
+		// Generate the token using the claims the user name.
+		return doGenerateToken(claims, username);
+	}
+
 	private String doGenerateToken(Map<String, Object> claims, String subject) {
-		return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs)).signWith(SignatureAlgorithm.HS512, secret).compact();
+		return Jwts.builder()
+				.setClaims(claims)
+				.setSubject(subject)
+				.setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
+				.signWith(SignatureAlgorithm.HS512, secret)
+				.compact();
 	}
 
 	// Validate the previously generated JWT token that the client passes in with every API request.

@@ -1,0 +1,33 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-spring4-4.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="header :: copy"></head>
+
+<!-- Template for the Account Create Form -->
+
+<body>
+	<h1>Create New Account</h1>
+
+	<!-- Binds all fields from an Account model object. When the Submit button is clicked, 
+		the form is submitted to POST /accounts -->
+	<form action="#" th:action="@{/accounts}" th:object="${account}" method="post">
+		<!-- Bind each data field to the corresponding field in the Account model object -->
+    	<p>Number: <input type="text" th:field="*{number}" /></p>
+		<p>Owner: <input type="text" th:field="*{owner}" /></p>
+		<p>Balance: <input type="number" th:field="*{balance}" /></p>
+		<!-- Submit button -->
+        <p><input type="submit" value="Submit" /> <input type="reset" value="Reset" /></p>
+    </form>
+
+	<div class="row" style="height: 2cm">&nbsp;</div>
+
+	<div class="row" style="text-align: right">
+	    <span class="col-12">
+		Options: &nbsp; <a th:href="@{/}">Home</a> | <a
+			th:href="@{/accounts/search}">Account Search</a></span>
+	</div>
+
+	<div th:replace="footer :: copy"></div>
+</body>
+</html>
