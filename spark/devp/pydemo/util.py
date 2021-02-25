@@ -7,8 +7,51 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 
 #-------------------------------------------
+# Read a streaming dataframe from a set of JSON files in a folder, given a schema.
+# Write the dataframe as a stream to the console
+# A single file cannot be read as a stream. You have to read multiple files from
+# a folder. So even though there is only one file, we have to add the wildcard
+# to the file name in the inputPath ie. "action*.json"
 #-------------------------------------------
+def getFileStream(spark, schema, inputPath):
+  # Read the dataframe as a stream from all the JSON files 
+  df = (spark
+      .readStream                 
+      .schema(schema)
+      .json(inputPath)
+  )
 
+  # Output stream to console
+  df.printSchema()
+  outStream = (df
+    .writeStream
+    .outputMode("append")
+    .option("forceDeleteTempCheckpointLocation", "true")
+    .format("console")
+    .start()
+  )
+
+  # Return the streaming dataframe
+  return df
+
+#-------------------------------------------
+# Write a streaming dataframe to a folder. Since it is a stream, a new file will
+# be written in the folder at regular intervals
+#-------------------------------------------
+def writeFileStream(df, outDir, checkpointDir):
+  outStream = (df
+    # If the df has many partitions, it will still write a separate file per partition 
+    # despite using the trigger below. So coalesce to one partition
+    .coalesce(1)
+    .writeStream
+    .outputMode("append")
+    .format("json")
+    # only write a new file every 10 seconds, so we don't generate hundreds of files
+    .trigger(processingTime="10 seconds")
+    .option("path", outDir)
+    .option("checkpointLocation", checkpointDir)
+    .start()
+  )
 
 #-------------------------------------------
 # Read a JSON string into a DataFrame based on a provided schema
