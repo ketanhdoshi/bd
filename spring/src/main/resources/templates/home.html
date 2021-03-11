@@ -1,7 +1,90 @@
-<html>
-<head><title>Home Page</title></head>
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+<head>
+    <title>Home Page</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width" />
+    <base href="/" />
+</head>
 <body>
-<h1>Hello !</h1>
-<p>Welcome to <span th:text="${appName}">Our App</span></p>
+    <h1>Hello KD!</h1>
+    <p>Welcome to <span th:text="${appName}">Our App</span></p>
+
+    <!-- We are using the Thymeleaf integration with Spring Security -->
+    <div style="float: right" th:fragment="logout" sec:authorize="isAuthenticated()">
+        <!-- Logout Section: If logged in, show the current user and a logout button-->
+        <div style="float:left">
+            <!-- User name -->
+            <span style="font-weight:bold">User: </span><span sec:authentication="name"></span>
+        </div>
+        <div style="float:none">&nbsp;</div>
+        <div style="float:right">
+            <!-- Logout button -->
+            <form action="#" th:action="@{/logout}" method="post">
+                <input type="submit" value="Logout" />
+            </form>
+        </div>
+    </div> 
+
+    <div sec:authorize="not isAuthenticated()">
+        <p>Using sec:authorize Not isAuthenticated</p>
+        <a class="nav-link" href="/login">Login</a>
+    </div>
+
+    <div sec:authorize="isAnonymous()">
+        <p>Using sec:authorize isAnonymous</p>
+        <a class="nav-link" href="/login">Login</a>
+    </div>
+
+    <div th:if="${not #authorization.expression('isAuthenticated()')}">
+        <p>Using If Not - Not Logged In</p>
+    </div>
+
+    <div th:unless="${#authorization.expression('isAuthenticated()')}">
+        <p>Using Unless - Not Logged In</p>
+    </div>
+
+<!--     <div th:switch="${#authentication}? ${#authorization.expression('isAuthenticated()')} : ${false}">
+        <span th:case="${false}">User is not logged in</span>
+        <span th:case="${true}">Logged in user</span>
+        <span th:case="*">Should never happen, but who knows...</span>
+    </div>
+    <span ${#authentication.principal.authorities}>Tim</span>
+
+    <div th:switch="${#authentication.principal.authorities}"> 
+        <p th:case="ROLE_USER">Switch - User is an USER</p>
+        <p th:case="ROLE_ADMIN">Switch - User is an ADMIN</p>
+        <p th:case="ADMIN">Switch 2 - User is an ADMIN</p>
+        <p th:case="USER">Switch 2 - User is an USER</p>
+        <p th:case="*">Switch - User is some other thing  </p> 
+    </div>     -->
+
+
+    <div sec:authorize="isAuthenticated()">
+        <p>This content is only shown to authenticated users.</p>
+        <p>Logged user: <span sec:authentication="name">Bob</span></p>
+        <p>Roles: <span sec:authentication="principal.authorities">[ROLE_USER, ROLE_ADMIN]</span></p>
+
+        <div sec:authorize-url="/accounts">
+            <p>This will only be displayed if authenticated user can call the "/accounts" URL.</p>
+            <p>Account 6648 <a href="/accounts/6648">6648</a></p>
+            <p>Account 9898 <a href="/accounts/9898">9898</a></p>
+          </div>
+        <div sec:authorize-url="POST /accounts/*">
+            <p>This will only be displayed if authenticated user can call the "/accounts" URL using the POST HTTP method.</p>
+            <p>Create account <a href="/accounts/create">create</a></p>
+            <p>Edit Account 6648 <a href="/accounts/6648/edit">Edit 6648</a></p>
+        </div>
+        <div sec:authorize="hasRole('ADMIN')">
+            <!-- Same as using hasRole('ROLE_ADMIN) -->
+            <p>This content is only shown to ADMIN</p>
+        </div>
+        <div sec:authorize="hasRole('USER')">
+            <!-- Same as using hasRole('ROLE_USER) -->
+            <p>This content is only shown to USER</p>
+        </div>
+    </div>
 </body>
 </html>

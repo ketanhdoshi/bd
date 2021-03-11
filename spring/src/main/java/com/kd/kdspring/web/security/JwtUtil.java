@@ -74,11 +74,18 @@ public class JwtUtil {
 		// If the user has the Admin role, add an Admins claim into the token. 
 		// Similarly if the user has User role, add an User claim into the token
 		Map<String, Object> claims = new HashMap<>();
-		if (roles.contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-			claims.put("isAdmin", true);
-		}
-		if (roles.contains(new SimpleGrantedAuthority("ROLE_USER"))) {
-			claims.put("isUser", true);
+		for (GrantedAuthority role: roles) {
+			String roleAuthority = role.getAuthority();
+			switch (roleAuthority) {
+				case "ROLE_ADMIN":
+					claims.put("isAdmin", true);
+					break;
+				case "ROLE_USER":
+					claims.put("isUser", true);
+					break;
+				default:
+					break;
+			}
 		}
 
 		// Generate the token using the claims the user name.

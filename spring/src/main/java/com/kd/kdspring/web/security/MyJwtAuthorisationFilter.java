@@ -7,6 +7,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.Cookie;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
 
 import io.jsonwebtoken.ExpiredJwtException;
 
@@ -36,7 +38,9 @@ public class MyJwtAuthorisationFilter extends OncePerRequestFilter {
 
 			// JWT Token is in the form "Bearer token". Remove Bearer word and
 			// get  only the Token
-			String jwtToken = extractJwtFromRequest(request);
+			// String jwtToken = extractJwtFromRequest(request);
+			Cookie cookie = WebUtils.getCookie(request, "jwt");
+			String jwtToken = (cookie != null) ? cookie.getValue() : null;
 
 			if (StringUtils.hasText(jwtToken) && jwtTokenUtil.validateToken(jwtToken)) {
 				UserDetails userDetails = new User(jwtTokenUtil.getUsernameFromToken(jwtToken), "",

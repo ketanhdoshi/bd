@@ -3,6 +3,7 @@
       xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
     <head>
         <title>Spring Security Example </title>
+        <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
     </head>
 
     <!-- Template for the Login Form -->
@@ -16,13 +17,35 @@
         </div>
         <!-- There is no Model object to bind to. When the Submit button is clicked, 
 		the form is submitted to POST /login -->
-        <form th:action="@{/login}" method="post">
+        <form th:action="@{/login}" method="post" id="loginForm">
             <!-- Username/password fields -->
             <div><label> User Name : <input type="text" name="username"/> </label></div>
             <div><label> Password: <input type="password" name="password"/> </label></div>
             <!-- Submit button -->
-            <div><input type="submit" value="Sign In"/></div>
+            <div><input type="submit" id="lsub" value="Sign In"/></div>
         </form>
+        <!-- Link to local path that processes the auth (and sends redirect to GitHub) -->
         <a href="http://localhost:8080/oauth2/authorization/github">Oauth Github</a>
+
+        <script script language="JavaScript" type="text/javascript">
+            $(document).ready(function () {
+                $('#lsub').click(function (e) {
+                    //stop submit the form, we will post it manually.
+                    e.preventDefault();
+                    var xhr = $.post({
+                        url: '/login',
+                        data: $('#loginForm').serialize(),
+                        success: function (res) {
+                            var token = xhr.getResponseHeader('Authorization');
+                            console.log ("success", token);
+                            localStorage.setItem('token', token);
+                        },
+                        error: function (e) {
+                            console.log ("error", e);
+                        }
+                    })
+                });
+            });
+        </script>    
     </body>
 </html>

@@ -12,6 +12,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.http.HttpStatus;
 
 // ------------------------------------------
 // Configuration Settings for all Security in the app
@@ -20,6 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		
+	@Autowired
+	MyOauthAuthenticationSuccessHandler oauthSuccessHandler;
+
 	@Autowired
 	MyUserDetailsService userDetailsService;
 
@@ -70,43 +75,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		return super.authenticationManagerBean();
 	}
 
-	/* @Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http.csrf().disable()
-			.authorizeRequests()
-				.antMatchers("/", "/home").permitAll()
-				.anyRequest().authenticated()
-			//.and().exceptionHandling()
-			//	.authenticationEntryPoint(unauthorizedHandler)
-			.and().formLogin()
-				.loginPage("/login")
-				.permitAll()
-				.and()
-			.logout()
-				.permitAll();
-	
-		// Add our custom filter to validate the JWT tokens with every request
-		http.addFilterBefore(customJwtAuthorisationFilter, 
-				UsernamePasswordAuthenticationFilter.class);
-	} */
-
 	// ------------------------------------------
 	// Configure Http Security to use our custom JWT Authentication Filter to validate JWT tokens
 	// and our custom Jwt Authentication EntryPoint to return HTTP errors when the validation
 	// fails.
 	// ------------------------------------------
 	@Override
-	protected void configure(HttpSecurity httpSecurity) throws Exception {
+	protected void configure(HttpSecurity http) throws Exception {
 		// We don't need CSRF for this example
-		httpSecurity.csrf().disable()
+		http.csrf().disable()
 			
 			.authorizeRequests()
 				// All requestes for accounts require Admin role
 				.antMatchers("/accounts/**").hasRole("ADMIN")
-				// All requests to the root page require User or Admin Role
-				//.antMatchers("/").hasAnyRole("ADMIN","USER")
+				// All requests to the 'js' page require User or Admin Role
+				.antMatchers("/js").hasAnyRole("ADMIN","USER")
 				.antMatchers("/").permitAll()
-				// Allow anyone including unauthenticated users to access the login URL
+				.antMatchers("/error", "/webjars/**", "/favicon.ico").permitAll()
+				// Allow anyone including unauthenticated users to access the REST login URL
 				.antMatchers("/authenticate").permitAll()
 				// All other requests must be authenticated
 				.anyRequest().authenticated()
@@ -115,23 +101,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 			// When JWT validation fails return HTTP error using our custom Entry Point
 			// !!!!!!!! Disable this as it blocks automatic redirecting of .formLogin to login page
 			// .exceptionHandling()
-			// 	.authenticationEntryPoint(unauthorizedHandler)
+			// 	.authenticationEntryPoint(unauthorizedHandler).and()
 			// Use stateless session; session won't be used to store user's state.
-			.sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			// Display a Custom Login Form at this URL
-			// !!!!!!! We could get rid of this section under formLogin
-			.and().formLogin()
+			// !!!!!!!! Disable this as it interferes with Oauth login
+			// .sessionManagement()
+			// 	.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			.oauth2Login()
 				.loginPage("/login")
+				.defaultSuccessUrl("/")
+				.successHandler(oauthSuccessHandler)
 				.permitAll()
 			.and().logout()
-				.permitAll()
-			.and().oauth2Login()
-				.loginPage("/login")
+				.deleteCookies("jwt")
 				.permitAll();
 
 		// Add our custom filter to validate the JWT tokens with every request
-		httpSecurity.addFilterBefore(customJwtAuthorisationFilter, 
-				UsernamePasswordAuthenticationFilter.class);
-		}
+		http.addFilterBefore(customJwtAuthorisationFilter, UsernamePasswordAuthenticationFilter.class);
+	}
 }

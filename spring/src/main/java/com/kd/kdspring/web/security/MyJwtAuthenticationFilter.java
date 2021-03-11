@@ -7,6 +7,7 @@ import javax.servlet.FilterChain;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import javax.servlet.http.Cookie;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -75,6 +76,14 @@ public class MyJwtAuthenticationFilter extends UsernamePasswordAuthenticationFil
 		logger.info("successfulAuthentication: " + username);
 
 		final String token = jwtTokenUtil.createToken (roles, username);
+
+		Cookie cookie = new Cookie("jwt", token);
+		cookie.setMaxAge(30 * 60); 	// expires in 30 minutes
+		cookie.setSecure(false);	// Send over HTTP not HTTPS
+		cookie.setHttpOnly(true);
+
+		//Add cookie to response
+		response.addCookie(cookie);
 		
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.getWriter().write("Logged in successfully");

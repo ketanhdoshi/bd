@@ -8,14 +8,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.Model;
 
 import com.kd.kdspring.account.Account;
-
-import org.springframework.web.bind.annotation.ModelAttribute;
-import com.kd.kdspring.web.security.AuthRequest;
 
 // ------------------------------------------
 // This is the Controller for the microservices web frontend UI. All end-user calls
@@ -45,6 +46,31 @@ public class WebAccountController {
         // The view is defined in a 'home.html' page
         return "home";
     }
+
+    // ------------------------------------------
+    // Show a Bootstrap and Jquery page 
+    // ------------------------------------------
+    @RequestMapping("/js")
+    public String jsPage(Model model) {
+        model.addAttribute("appName", appName);
+        // The view is defined in a 'js.html' page
+        return "js";
+    }
+
+    // ------------------------------------------
+    // Show info about the Oauth User
+    // ------------------------------------------
+    @RequestMapping("/oauthInfo")  
+    public String securedPage(Model model,  
+                              @RegisteredOAuth2AuthorizedClient("github") OAuth2AuthorizedClient authorizedClient,  
+                              @AuthenticationPrincipal OAuth2User oauth2User) {  
+        if (oauth2User != null) {
+            model.addAttribute("userName", oauth2User.getName());
+            model.addAttribute("userAttributes", oauth2User.getAttributes());        
+        }
+        model.addAttribute("clientName", authorizedClient.getClientRegistration().getClientName());  
+        return "oauthInfo";  
+    } 
 
     // ------------------------------------------
     // Show the Login page 
