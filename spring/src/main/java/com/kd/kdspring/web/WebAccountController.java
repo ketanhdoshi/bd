@@ -18,6 +18,14 @@ import org.springframework.ui.Model;
 
 import com.kd.kdspring.account.Account;
 
+// Figure out SecurityConfig how to use Authentication Entry Points
+// Refactor the creation of JWT Token in Cookie in OauthAuthenticationSuccessHandler and JwtAuthenticationFilter
+// In home.html, add one section where we use the saved JWT Authorization header from local storage to make another request with the JWT token (instead of relying on cookie)
+// Do we need a JwtAuthenticationFilter that extends UsernamePasswordFilter, or can we just use a successHandler like we do for Oauth
+// Figure out how to do a more advanced example with Authorization and Grant Authority etc.
+// Make some better example out of the logic in the /kdtok and /oauthInfo methods below.
+// Get rid of kdoauth folder
+
 // ------------------------------------------
 // This is the Controller for the microservices web frontend UI. All end-user calls
 // come here and the don't access the microservices directly. This Controller displays the 
@@ -71,6 +79,16 @@ public class WebAccountController {
         model.addAttribute("clientName", authorizedClient.getClientRegistration().getClientName());  
         return "oauthInfo";  
     } 
+
+    /* @GetMapping("/kdtok")
+    public String kdtok(Authentication authentication) {
+        OAuth2AuthorizedClient authorizedClient =
+            this.authorizedClientService.loadAuthorizedClient("github", authentication.getName());
+
+        OAuth2AccessToken accessToken = authorizedClient.getAccessToken();
+
+        return "kdtok";
+    } */
 
     // ------------------------------------------
     // Show the Login page 

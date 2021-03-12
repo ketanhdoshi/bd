@@ -1,0 +1,29 @@
+# Spring properties
+spring:
+  # Set the application name, so the service registers under this 
+  # name and can also be accessed by this name 
+  application:
+     name: user-service
+
+  datasource:
+    url: jdbc:mysql://192.168.65.3:30300/kdtst?useSSL=false
+    username: root
+    password: debezium
+
+  # With the generation GenerationType.AUTO hibernate looks for the hibernate_sequence 
+  # table. This property disables that. 
+  # Alternately change generation to @GeneratedValue(strategy = GenerationType.IDENTITY)
+  jpa:
+    hibernate:
+      use-new-id-generator-mappings: false
+
+# Discovery Server Access
+eureka:
+  client:
+    # URL of the Eureka Discovery Server
+    serviceUrl:
+      defaultZone: http://localhost:1111/eureka/
+
+# HTTP (Tomcat) port for the User Server to listen
+server:
+  port: 1140

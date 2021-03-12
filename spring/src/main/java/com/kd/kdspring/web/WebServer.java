@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 public class WebServer {
     // URL uses the logical name of all microservices (case insensitive)
     public static final String ACCOUNT_SERVICE_URL = "http://ACCOUNT-SERVICE";
+    public static final String USER_SERVICE_URL = "http://USER-SERVICE";
     public static final String LEGACY_APPLICATION_URL = "http://LEGACY-APPLICATION";
 
     public static void main(String[] args) {
@@ -65,5 +66,25 @@ public class WebServer {
     @Bean
     public WebAccountController accountsController() {
         return new WebAccountController(accountService());
+    }
+
+        /**
+     * The UserService encapsulates the interaction with the micro-service.
+     * 
+     * @return A new service instance.
+     */
+    @Bean
+    public WebUserService userService() {
+        return new WebUserService(USER_SERVICE_URL);
+    }
+
+    /**
+     * Create the controller, passing it the {@link WebUserService} to use.
+     * 
+     * @return
+     */
+    @Bean
+    public WebUserController userController() {
+        return new WebUserController(userService());
     }
 }

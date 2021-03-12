@@ -2,6 +2,7 @@ package com.kd.kdspring;
 
 import com.kd.kdspring.registration.RegistrationServer;
 import com.kd.kdspring.account.AccountServer;
+import com.kd.kdspring.user.UserServer;
 import com.kd.kdspring.web.WebServer;
 import com.kd.kdspring.legacy.LegacyApplication;
 
@@ -35,6 +36,9 @@ public class Main {
         } else if (serverName.equals("account")) {
             // Start the Accounts Server service
             AccountServer.main(args);
+        } else if (serverName.equals("user")) {
+            // Start the User Server service
+            UserServer.main(args);
         } else if (serverName.equals("web")) {
             WebServer.main(args);
         } else if (serverName.equals("legacy")) {

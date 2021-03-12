@@ -20,7 +20,13 @@ import org.springframework.context.annotation.Bean;
 //@EnableJpaRepositories
 // Tell Boot to search and auto-instantiate Entity beans in these packages
 @EntityScan({"com.kd.kdspring.book", "com.kd.kdspring.member"})
-@SpringBootApplication
+// @SpringBootApplication
+// Disable Security and Actuator Security, so that other services don't need to 
+// authenticate
+@SpringBootApplication (exclude = {
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+    org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
+})
 @ComponentScan(basePackages = {
 	"com.kd.kdspring.legacy",
 	"com.kd.kdspring.book", 

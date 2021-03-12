@@ -46,21 +46,14 @@
         <p>Using Unless - Not Logged In</p>
     </div>
 
-<!--     <div th:switch="${#authentication}? ${#authorization.expression('isAuthenticated()')} : ${false}">
-        <span th:case="${false}">User is not logged in</span>
-        <span th:case="${true}">Logged in user</span>
-        <span th:case="*">Should never happen, but who knows...</span>
-    </div>
-    <span ${#authentication.principal.authorities}>Tim</span>
-
-    <div th:switch="${#authentication.principal.authorities}"> 
-        <p th:case="ROLE_USER">Switch - User is an USER</p>
-        <p th:case="ROLE_ADMIN">Switch - User is an ADMIN</p>
-        <p th:case="ADMIN">Switch 2 - User is an ADMIN</p>
-        <p th:case="USER">Switch 2 - User is an USER</p>
-        <p th:case="*">Switch - User is some other thing  </p> 
-    </div>     -->
-
+    <!-- Example of using Switch with Thymeleaf. Figure out how to use this below to switch
+        between different content for different user roles     
+        <div th:switch="${#authentication}? ${#authorization.expression('isAuthenticated()')} : ${false}">
+            <span th:case="${false}">User is not logged in</span>
+            <span th:case="${true}">Logged in user</span>
+            <span th:case="*">Should never happen, but who knows...</span>
+        </div>
+    -->
 
     <div sec:authorize="isAuthenticated()">
         <p>This content is only shown to authenticated users.</p>

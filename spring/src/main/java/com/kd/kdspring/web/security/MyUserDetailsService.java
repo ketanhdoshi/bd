@@ -11,13 +11,20 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-// Custom User Details service to retrieve user information given a username. This would
-// normally be fetched from a database, but for now we support only two hardcoded users, viz.
-// "user" and "admin" and hardcode their passwords and roles.
+import org.springframework.beans.factory.annotation.Autowired;
+import com.kd.kdspring.web.WebUserService;
+import com.kd.kdspring.user.UserInfo;
+
+// Custom User Details service to retrieve user information given a username. We have two 
+// hardcoded users, viz. "user" and "admin" along with their passwords and roles. For all
+// other users, we look them up from a back-end User Service.
 @Service
 public class MyUserDetailsService implements UserDetailsService {
 
     protected Logger logger = Logger.getLogger(MyUserDetailsService.class.getName());
+
+	@Autowired
+    protected WebUserService userService;
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -34,6 +41,14 @@ public class MyUserDetailsService implements UserDetailsService {
 		{
             roles = Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
             return new User("user", "$2y$12$VfZTUu/Yl5v7dAmfuxWU8uRfBKExHBWT1Iqi.s33727NoxHrbZ/h2", roles);
+		}
+		else {
+			// Check the back-end User Service for a matching user in the MySql database
+			UserInfo user = userService.findByUsername(username);
+			if (user != null) { // found matching user
+				roles = Arrays.asList(new SimpleGrantedAuthority(user.getRoles()));
+				return new User(user.getUsername(), user.getPassword(), roles);	
+			}
 		}
 		throw new UsernameNotFoundException("User not found with username: " + username);
 	}
