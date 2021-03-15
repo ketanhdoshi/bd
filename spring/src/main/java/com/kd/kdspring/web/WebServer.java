@@ -9,9 +9,14 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 // Disable auto-configuration of Repository beans
-@SpringBootApplication(exclude = { HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class })
+// Also disable Reactive Webflux load balancer auto configuration (I think)
+@SpringBootApplication(exclude = { 
+    HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class,
+    //org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerBeanPostProcessorAutoConfiguration.class, 
+})
 // We use Eureka Discovery Service as a client to locate all our microservices.
 // However being a client also means automatically registering ourself with Eureka as a service 
 // (although that is not necessary since we offers no services of our own)
@@ -47,6 +52,17 @@ public class WebServer {
     RestTemplate restTemplate() {
         return new RestTemplate();
     }
+
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder getWebClient(){
+        return WebClient.builder();
+    }
+
+/*     @Bean
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.build();
+    } */
 
     /**
      * The AccountService encapsulates the interaction with the micro-service.
@@ -86,5 +102,15 @@ public class WebServer {
     @Bean
     public WebUserController userController() {
         return new WebUserController(userService());
+    }
+
+    /**
+     * Create the controller.
+     * 
+     * @return
+     */
+    @Bean
+    public WebClientController clientController() {
+        return new WebClientController();
     }
 }

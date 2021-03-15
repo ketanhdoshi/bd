@@ -17,11 +17,12 @@ import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 // It runs as a standalone application and listens on a Tomcat port as per
 // its configuration settings.
 
-// Disable Security and Actuator Security, so that services don't need to 
-// authenticate to register
+// Disable Security and Actuator Security, so that services don't need to authenticate to register
+// Also disable Reactive Webflux load balancer auto configuration (I think)
 @SpringBootApplication (exclude = {
   org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
-  org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
+  org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class,
+  org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerBeanPostProcessorAutoConfiguration.class,
 })
 @EnableEurekaServer
 public class RegistrationServer {
