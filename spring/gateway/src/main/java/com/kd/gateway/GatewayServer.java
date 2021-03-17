@@ -24,9 +24,8 @@ public class GatewayServer {
     } */
 
 	public static void main(String[] args) {
-        SpringApplication.run(GatewayServer.class, args);
-        // Tell server to look for gateway-server.yml
-        System.setProperty("spring.config.name", "gateway-server");
+                // Tell server to look for gateway-server.yml
+                System.setProperty("spring.config.name", "gateway-server");
+                SpringApplication.run(GatewayServer.class, args);
 	}
-
 }

@@ -6,7 +6,7 @@ spring:
     suffix: .html
 
   application:
-    name: KD Practice Spring
+    name: legacy-application
 
   datasource:
     url: jdbc:mysql://192.168.65.3:30300/kdtst?useSSL=false
@@ -28,6 +28,13 @@ server:
     whitelabel:
       enabled: false 
 
+# Discovery Server Access
 eureka:
   client:
-    enabled: false
+    # URL of the Eureka Discovery Server
+    serviceUrl:
+      defaultZone: http://localhost:1111/eureka/
+    
+    # Disable registration with Eureka
+    #enabled: false
+

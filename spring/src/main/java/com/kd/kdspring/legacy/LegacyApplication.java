@@ -10,22 +10,26 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 // Although this runs as a microservice in the microservice architecture, 
 // it internally consists of a small 'monolithic' application with some web controllers
 // as well as a handful of REST APIs with their database backends.
 
+// Enable service registration and discovery, so it registers itself with the discovery-server service
+@EnableDiscoveryClient
 // Tell Boot to search and auto-instantiate Repository beans in these packages
 @EnableJpaRepositories({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 //@EnableJpaRepositories
 // Tell Boot to search and auto-instantiate Entity beans in these packages
 @EntityScan({"com.kd.kdspring.book", "com.kd.kdspring.member"})
 // @SpringBootApplication
-// Disable Security and Actuator Security, so that other services don't need to 
-// authenticate
+// Disable Security and Actuator Security, so that other services don't need to authenticate
+// Also disable Reactive Webflux load balancer auto configuration
 @SpringBootApplication (exclude = {
     org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
-    org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class
+	org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class,
+	org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerBeanPostProcessorAutoConfiguration.class,
 })
 @ComponentScan(basePackages = {
 	"com.kd.kdspring.legacy",

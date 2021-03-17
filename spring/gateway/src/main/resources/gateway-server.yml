@@ -13,21 +13,26 @@ spring:
       discovery:
         locator:
           enabled: true
+          # Make Service Registry name lookup be case-insensitive
           lower-case-service-id: true
       routes:
+      # Account Service
       - id: account-service
         uri: lb://account-service
         predicates:
         - Path=/accounts/**
       #   # filters:
       #   # - RewritePath=/accounts/(?.*), /$\{path}
-      - id: user-app
+      # User Service
+      - id: user-service
         uri: lb://user-service
         predicates:
         - Path=/api/users/**
-      #   # filters:
-      #   # - RewritePath=/customer/(?.*), /$\{path}
-
+      # Legacy Application
+      - id: legacy-app
+        uri: lb://legacy-application
+        predicates:
+        - Path=/api/members,/api/books,/api/members/**,/api/books/**
 
 # Discovery Server Access
 eureka:
