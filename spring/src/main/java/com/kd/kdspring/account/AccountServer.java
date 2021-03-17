@@ -4,7 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 
 // Disable Security and Actuator Security, so that other services don't need to 
 // authenticate
@@ -14,7 +13,6 @@ import org.springframework.context.annotation.Import;
 })
 // Enable service registration and discovery, so it registers itself with the discovery-server service
 @EnableDiscoveryClient
-// @Import(AccountsWebApplication.class)
 public class AccountServer {
 
     @Autowired

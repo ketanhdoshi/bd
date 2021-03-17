@@ -4,6 +4,7 @@ spring:
   # name and can also be accessed by this name 
   application:
      name: web-service
+
   # Oauth Github settings
   security:  
     oauth2:  

@@ -1,6 +1,14 @@
-# Ignore JDBC Dependency. We are putting 3 applicatons in the same project so they all pick up the
-# JDBC Depdendency, but this application doesn't need it.
-spring.autoconfigure.exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+spring:
+  # Ignore JDBC Dependency. We are putting 3 applicatons in the same project so they all pick up the
+  # JDBC Depdendency, but this application doesn't need it.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+  # Discovery Server Dashboard uses FreeMarker.  Don't want Thymeleaf templates
+  thymeleaf:
+    enabled: false     # Disable Thymeleaf 
+  datasource:
+    type: org.springframework.jdbc.datasource.SimpleDriverDataSource
 
 # Configure this Discovery Server
 eureka:
@@ -14,10 +22,3 @@ eureka:
 # HTTP (Tomcat) port for Eureka server to listen
 server:
     port: 1111
-
-# Discovery Server Dashboard uses FreeMarker.  Don't want Thymeleaf templates
-spring:
-    thymeleaf:
-      enabled: false     # Disable Thymeleaf 
-    datasource:
-      type: org.springframework.jdbc.datasource.SimpleDriverDataSource

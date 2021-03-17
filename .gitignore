@@ -43,4 +43,14 @@ kafka/devp/*/bin/
 kafka/devp/*/src/test/
 kafka/devp/kdconnector/docker-compose.yml
 spring/.mvn/
+spring/target/
+spring/.settings/
+spring/.classpath
+spring/.project
+spring/.factorypath
+spring/HELP.md
+spring/*/target/
+spring/*/.settings/
+spring/*/.classpath
+spring/*/.project
 

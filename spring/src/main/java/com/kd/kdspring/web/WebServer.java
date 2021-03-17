@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 // Also disable Reactive Webflux load balancer auto configuration (I think)
 @SpringBootApplication(exclude = { 
     HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class,
-    //org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerBeanPostProcessorAutoConfiguration.class, 
 })
 // We use Eureka Discovery Service as a client to locate all our microservices.
 // However being a client also means automatically registering ourself with Eureka as a service 

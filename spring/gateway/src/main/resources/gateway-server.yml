@@ -1,0 +1,37 @@
+# HTTP (Netty) port for the Gateway Server to listen
+server:
+  port: 8080 # !!!!!!!! TEMP Change to 8081
+
+spring:
+  # Set the application name, so the service registers under this 
+  # name and can also be accessed by this name 
+  application:
+    name: gateway-service
+  cloud:
+    # Enable gateway's integration with the service registry to find microservices
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+      - id: account-service
+        uri: lb://account-service
+        predicates:
+        - Path=/accounts/**
+      #   # filters:
+      #   # - RewritePath=/accounts/(?.*), /$\{path}
+      - id: user-app
+        uri: lb://user-service
+        predicates:
+        - Path=/api/users/**
+      #   # filters:
+      #   # - RewritePath=/customer/(?.*), /$\{path}
+
+
+# Discovery Server Access
+eureka:
+  client:
+    # URL of the Eureka Discovery Server
+    serviceUrl:
+      defaultZone: http://localhost:1111/eureka/
