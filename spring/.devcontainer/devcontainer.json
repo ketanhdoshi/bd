@@ -17,11 +17,13 @@
 		"vscjava.vscode-spring-initializr",
 		"pivotal.vscode-spring-boot",
 		"vscjava.vscode-spring-boot-dashboard",
-		"cweijan.vscode-mysql-client2"
+		"cweijan.vscode-mysql-client2",
+		"gabrielbb.vscode-lombok"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [8080, 1111],
+	// For Tomcat Web Server, API Gateway and Eureka Service Registry
+	"forwardPorts": [8080, 8081, 1111],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "java -version",
