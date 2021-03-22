@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RestController
 public class HomeController {
 
-	@RequestMapping("/")
+	@RequestMapping("/api")
 	public String home() {
 		return "Accounts Home";
 	}

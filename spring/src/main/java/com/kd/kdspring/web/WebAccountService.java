@@ -2,17 +2,16 @@ package com.kd.kdspring.web;
 
 import java.util.logging.Logger;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.ResponseEntity;
 
 import com.kd.kdspring.account.Account;
 
 public class WebAccountService {
     @Autowired
-    @LoadBalanced
-    protected RestTemplate restTemplate;
+    private WebClient.Builder webClientBuilder;
 
     protected String serviceUrl;
 
@@ -26,18 +25,27 @@ public class WebAccountService {
     public ResponseEntity<String> getHome() {
         //logger.info("findByNumber() invoked: for " + accountNumber);
         try {
-            return restTemplate.getForEntity(serviceUrl + "/", String.class);
+            String msg = webClientBuilder.build().get()
+                .uri(serviceUrl)
+                .retrieve()
+                .bodyToMono(String.class).block();
+            return ResponseEntity.status(HttpStatus.OK).body(msg);
         } catch (Exception e) {
-            //logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
+            logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
             return null;
         }
     }
 
     public Account findByNumber(String accountNumber) {
         logger.info("findByNumber() invoked: for " + accountNumber);
+
         try {
             // REST call to back-end Account microservice
-            return restTemplate.getForObject(serviceUrl + "/accounts/{number}", Account.class, accountNumber);
+            Account account = webClientBuilder.build().get()
+                .uri(String.join("/", serviceUrl, "accounts", accountNumber))
+                .retrieve()
+                .bodyToMono(Account.class).block();
+            return account;
         } catch (Exception e) {
             logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
             return null;

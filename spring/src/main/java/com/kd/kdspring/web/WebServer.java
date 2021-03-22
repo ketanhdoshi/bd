@@ -83,7 +83,7 @@ public class WebServer {
         return new WebAccountController(accountService());
     }
 
-        /**
+    /**
      * The UserService encapsulates the interaction with the micro-service.
      * 
      * @return A new service instance.
@@ -101,6 +101,26 @@ public class WebServer {
     @Bean
     public WebUserController userController() {
         return new WebUserController(userService());
+    }
+
+    /**
+     * The LegacyService encapsulates the interaction with the legacy application.
+     * 
+     * @return A new service instance.
+     */
+    @Bean
+    public WebLegacyService legacyService() {
+        return new WebLegacyService(LEGACY_APPLICATION_URL);
+    }
+
+    /**
+     * Create the controller, passing it the {@link WebLegacyService} to use.
+     * 
+     * @return
+     */
+    @Bean
+    public WebLegacyController legacyController() {
+        return new WebLegacyController(legacyService());
     }
 
     /**

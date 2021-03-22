@@ -3,15 +3,13 @@ package com.kd.kdspring.web;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.kd.kdspring.user.UserInfo;
 
 public class WebUserService {
     @Autowired
-    @LoadBalanced
-    protected RestTemplate restTemplate;
+    private WebClient.Builder webClientBuilder;
 
     protected String serviceUrl;
 
@@ -26,7 +24,11 @@ public class WebUserService {
         logger.info("findByUsername() invoked: for " + username);
         try {
             // REST call to back-end User microservice
-            return restTemplate.getForObject(serviceUrl + "/users/{username}", UserInfo.class, username);
+            UserInfo user = webClientBuilder.build().get()
+                .uri(String.join("/", serviceUrl, "users", username))
+                .retrieve()
+                .bodyToMono(UserInfo.class).block();
+            return user;
         } catch (Exception e) {
             logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
             return null;
