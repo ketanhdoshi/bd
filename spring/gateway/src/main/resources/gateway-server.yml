@@ -1,6 +1,6 @@
 # HTTP (Netty) port for the Gateway Server to listen
 server:
-  port: 8080 # !!!!!!!! TEMP Change to 8081
+  port: 8081
 
 spring:
   # Set the application name, so the service registers under this 
@@ -20,7 +20,7 @@ spring:
       - id: account-service
         uri: lb://account-service
         predicates:
-        - Path=/accounts/**
+        - Path=/api/accounts,/api/accounts/**
       #   # filters:
       #   # - RewritePath=/accounts/(?.*), /$\{path}
       # User Service

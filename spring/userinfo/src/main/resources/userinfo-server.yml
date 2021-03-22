@@ -5,8 +5,8 @@ spring:
   application:
      name: user-service
 
-  datasource:
-    url: jdbc:mysql://192.168.65.3:30300/kdtst?useSSL=false
+  r2dbc:
+    url: r2dbc:mysql://192.168.65.3:30300/kdtst?useSSL=false
     username: root
     password: debezium
 
@@ -24,6 +24,6 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:1111/eureka/
 
-# HTTP (Tomcat) port for the User Server to listen
+# HTTP (Netty) port for the Userinfo Server to listen
 server:
   port: 1140

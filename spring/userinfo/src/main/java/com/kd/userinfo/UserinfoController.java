@@ -1,4 +1,4 @@
-package com.kd.kdspring.user;
+package com.kd.userinfo;
 
 import javax.validation.Valid;
 import java.util.logging.Logger;
@@ -13,18 +13,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import com.kd.kdspring.exception.UserNotFoundException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class UserinfoController {
 
-	protected Logger logger = Logger.getLogger(UserController.class.getName());
+	protected Logger logger = Logger.getLogger(UserinfoController.class.getName());
 
-	// Inject the User Repository
+	// Inject the Userinfo Repository
 	@Autowired
-	protected UserRepository userRepository;
+	protected UserinfoRepository userinfoRepository;
 
 	@Autowired
 	private PasswordEncoder bcryptEncoder;
@@ -37,7 +37,7 @@ public class UserController {
 	 */
 	@PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserInfo createUser (@Valid @RequestBody UserInfo user) {
+    public Mono createUser (@Valid @RequestBody Userinfo user) {
 
 		// Encrypt the user's password before saving
 		user.setPassword(bcryptEncoder.encode(user.getPassword()));
@@ -47,7 +47,7 @@ public class UserController {
 		// newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
 		// newUser.setRole(user.getRole());
 
-        return userRepository.save(user);
+        return userinfoRepository.save(user);
     }
 
 	 /**
@@ -55,19 +55,11 @@ public class UserController {
 	 * 
 	 * @param username    	String
 	 * @return 				The User if found.
-	 * @throws UserNotFoundException	If the username is not recognised.
 	 */
 	@GetMapping("/{username}")
-	public UserInfo byUsername(@PathVariable("username") String username) {
-
-		UserInfo user = userRepository.findByUsername(username);
-		logger.info("user-service byUsername() found: " + username);
-
-		if (user == null)
-			throw new UserNotFoundException(username);
-		else {
-			return user;
-		}
+	public Mono<Userinfo> byUsername(@PathVariable("username") String username) {
+		logger.info("user-service byUsername() called: " + username);
+		return userinfoRepository.findByUsername(username);
 	}
 
 }

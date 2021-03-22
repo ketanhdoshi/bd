@@ -20,6 +20,7 @@ public class WebAccountService {
 
     public WebAccountService(String serviceUrl) {
         this.serviceUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
+        this.serviceUrl += "/api";
     }
 
     public ResponseEntity<String> getHome() {

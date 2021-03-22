@@ -19,13 +19,14 @@ public class WebUserService {
 
     public WebUserService(String serviceUrl) {
         this.serviceUrl = serviceUrl.startsWith("http") ? serviceUrl : "http://" + serviceUrl;
+        this.serviceUrl += "/api";
     }
 
     public UserInfo findByUsername(String username) {
         logger.info("findByUsername() invoked: for " + username);
         try {
             // REST call to back-end User microservice
-            return restTemplate.getForObject(serviceUrl + "/api/users/{username}", UserInfo.class, username);
+            return restTemplate.getForObject(serviceUrl + "/users/{username}", UserInfo.class, username);
         } catch (Exception e) {
             logger.severe(e.getClass() + ": " + e.getLocalizedMessage());
             return null;
