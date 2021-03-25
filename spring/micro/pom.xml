@@ -110,12 +110,30 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<!-- Starters for JWT tokens -->
 		<dependency>
-			<!-- Starter for JWT tokens -->
 			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt</artifactId>
-			<version>0.9.1</version>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.1</version>
 		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.1</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.1</version>
+			<scope>runtime</scope>
+		</dependency>
+<!-- 		<dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.2</version>
+            <scope>runtime</scope>
+        </dependency> -->
 
 		<dependency>
 			<!-- Starter for Oauth -->

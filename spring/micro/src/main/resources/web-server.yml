@@ -25,7 +25,7 @@ eureka:
 
 # Secret key for signing JWT tokens
 jwt:
-  secret: challokd
+  secret: ThisIsSecretForJWTHS512SignatureAlgorithmThatMUSTBeAtLeastLongEnoughtoSecurelySignKeysWith64ByteLength
   jwtExpirationInMs: 3600000  # 1 hour in milliseconds
 
 

@@ -17,6 +17,11 @@ spring:
     hibernate:
       use-new-id-generator-mappings: false
 
+# Secret key for signing JWT tokens
+jwt:
+  secret: ThisIsSecretForJWTHS512SignatureAlgorithmThatMUSTBeAtLeastLongEnoughtoSecurelySignKeysWith64ByteLength
+  jwtExpirationInMs: 3600000  # 1 hour in milliseconds
+
 # Discovery Server Access
 eureka:
   client:
