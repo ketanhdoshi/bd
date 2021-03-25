@@ -24,10 +24,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
 		http
-			// .httpBasic().disable()
-        	// .formLogin().disable()
-        	// .csrf().disable()
-        	// .logout().disable()
+			.httpBasic().disable()
+        	.formLogin().disable()
+        	.csrf().disable()
+        	.logout().disable()
 			// Add a filter with Authorization on header   
 			.addFilterAt(customJwtAuthorisationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         	.authorizeExchange()
