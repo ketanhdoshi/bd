@@ -1,6 +1,5 @@
 package com.kd.kdspring;
 
-import com.kd.kdspring.registration.RegistrationServer;
 import com.kd.kdspring.web.WebServer;
 import com.kd.kdspring.legacy.LegacyApplication;
 
@@ -28,10 +27,7 @@ public class Main {
             return;
         }
  
-        if (serverName.equals("registration")) {
-            // Start Eureka Service Discovery
-            RegistrationServer.main(args);
-        } else if (serverName.equals("web")) {
+        if (serverName.equals("web")) {
             WebServer.main(args);
         } else if (serverName.equals("legacy")) {
             // Start the Legacy Application service (which internally is a monolithic application)

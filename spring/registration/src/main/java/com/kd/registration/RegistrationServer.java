@@ -1,4 +1,4 @@
-package com.kd.kdspring.registration;
+package com.kd.registration;
 
 // This is to tell Boot to disable auto configuration of Data sources. The
 // other way to do the same thing is to turn it off via a configuration setting. If 
