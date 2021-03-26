@@ -1,13 +1,16 @@
 package com.kd.kdspring.web;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
@@ -104,9 +107,17 @@ public class WebAccountController {
     // !!!!!!right now it just shows a home page
     // ------------------------------------------
     @GetMapping("/accounts")
-    public String getHome(Model model) {
-        String retValue = accountService.getHome().getBody();
-        model.addAttribute("appName", retValue);
+    public String getAllAccounts(Authentication auth, Model model) {
+        String token = auth.getCredentials().toString();
+
+        // Fetch all backend account
+        List<Account> accounts = accountService.findAll(token);
+        logger.info("Found all accounts" + accounts);
+
+        // String retValue = accountService.getHome().getBody();
+        // model.addAttribute("appName", retValue);
+
+        model.addAttribute("appName", accounts);
         return "home";
     }
 
@@ -130,24 +141,28 @@ public class WebAccountController {
     // all the fields on the form
     // ------------------------------------------
     @PostMapping("/accounts")
-    public String createAccount(@ModelAttribute Account account, Model model) {
+    public String createAccount(Authentication auth, @ModelAttribute Account account, Model model) {
+        String token = auth.getCredentials().toString();
         logger.info("web-service createAccount() invoked: " + account.getNumber() + account.getBalance());
 
-        // !!!!!!! Create backend account
+        // Create backend account
+        account = accountService.create(token, account);
+        logger.info("Created account: " + account);
 
-        // !!!!!!! We should show a proper result form
-        String retValue = accountService.getHome().getBody();
-        model.addAttribute("appName", retValue);
-        return "home";
+        // Return a view name, which is in 'account.html'
+        model.addAttribute("account", account);
+        return "account";
     }
 
     // ------------------------------------------
     // Show the Account Details page, given the account number as part of the URL.
     // ------------------------------------------
     @GetMapping("/accounts/{accountNumber}")
-    public String getAccount(Model model, @PathVariable("accountNumber") String accountNumber) {
+    public String getAccount(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        String token = auth.getCredentials().toString();
+        
         // Use the number to get the account. It also gets added to the model
-        Account account = byNumber(model, accountNumber);
+        Account account = byNumber(token, model, accountNumber);
 
         // Return a view name, which is in 'account.html'
         return "account";
@@ -157,9 +172,10 @@ public class WebAccountController {
     // Show the Edit Account Edit Form, given the account number as part of the URL.
     // ------------------------------------------
     @GetMapping("/accounts/{accountNumber}/edit")
-    public String editForm(Model model, @PathVariable("accountNumber") String accountNumber) {
+    public String editForm(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        String token = auth.getCredentials().toString();
         // Use the number to get the account. It also gets added to the model
-        Account account = byNumber(model, accountNumber);
+        Account account = byNumber(token, model, accountNumber);
 
         // Return a view name, which is in 'accountedit.html'
         return "accountedit";
@@ -171,13 +187,35 @@ public class WebAccountController {
     // all the fields on the form
     // ------------------------------------------
     @PostMapping("/accounts/{accountNumber}")
-    public String updateAccount(@ModelAttribute Account updateAccount, Model model, @PathVariable("accountNumber") String accountNumber) {
-        Account account = byNumber(model, accountNumber);
+    public String updateAccount(Authentication auth, @ModelAttribute Account updateAccount, Model model, @PathVariable("accountNumber") String accountNumber) {
+        String token = auth.getCredentials().toString();
+        Account account = byNumber(token, model, accountNumber);
 
-        // !!!!!!! Update backend account
+        // Update backend account
+        account = accountService.update(token, updateAccount, accountNumber);
+        logger.info("Updated account: " + account);
 
         // Return a view name, which is in 'account.html'
+        model.addAttribute("account", account);
         return "account";
+    }
+
+    // ------------------------------------------
+    // Delete the account with the given account number
+    // ------------------------------------------
+    @DeleteMapping("/accounts/{accountNumber}")
+    public String deleteAccount(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        String token = auth.getCredentials().toString();
+        Account account = byNumber(token, model, accountNumber);
+
+        // Delete backend account
+        Boolean status = accountService.delete(token, accountNumber);
+        String msg = "Delete account: " + (status ? "successful" : "unsuccessful");
+        logger.info(msg);
+
+        // Return a view name, which is in 'home.html'
+        model.addAttribute("appName", msg);
+        return "home";
     }
 
     // ------------------------------------------
@@ -185,11 +223,11 @@ public class WebAccountController {
     // its account number. The returned Account object is added to the Model that
     // gets attached to the view
     // ------------------------------------------
-    private Account byNumber(Model model, String accountNumber) {
+    private Account byNumber(String token, Model model, String accountNumber) {
         logger.info("web-service byNumber() invoked: " + accountNumber);
 
         // Fetch account from backend microservice
-        Account account = accountService.findByNumber(accountNumber);
+        Account account = accountService.findByNumber(token, accountNumber);
         if (account == null) { // no such account
             model.addAttribute("number", accountNumber);
         } else {

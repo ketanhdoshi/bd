@@ -21,8 +21,8 @@ spring:
         uri: lb://account-service
         predicates:
         - Path=/api/accounts,/api/accounts/**
-      #   # filters:
-      #   # - RewritePath=/accounts/(?.*), /$\{path}
+        # filters:
+        # - RewritePath=/accounts/(?.*), /$\{path}
       # User Service
       - id: user-service
         uri: lb://user-service
@@ -33,6 +33,11 @@ spring:
         uri: lb://legacy-application
         predicates:
         - Path=/api/members,/api/books,/api/members/**,/api/books/**
+      default-filters:
+        # Forward incoming Authorization Header onward to the destination service
+        # Not required because it is enabled by default
+        #filters:
+        #  - MapRequestHeader=Authorization, Authorization
 
 # Discovery Server Access
 eureka:
