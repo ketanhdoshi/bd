@@ -1,6 +1,77 @@
-# K8s dashboard and token
-http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+#-------------------------------------------
+# Setup Kubernetes Dashboard
+#-------------------------------------------
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.2.0/aio/deploy/recommended.yaml
+kubectl apply -f k8s/dashboard-adminuser.yaml
+
+# Increase login token timeout. After running the command below, a notepad window opens. Find the container
+# section and then add "- --token-ttl=43200" under the "args:". Save and exit notepad.
+kubectl edit deployment -n kubernetes-dashboard kubernetes-dashboard
+
+# Get K8s token and open dashboard in browser
 kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | sls admin-user | ForEach-Object { $_ -Split '\s+' } | Select -First 1)
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+#-------------------------------------------
+# Setup MySQL with Helm in namespace 'mysql'
+#-------------------------------------------
+kubectl apply -f mysql\mysql-pv.yaml
+kubectl create namespace mysql
+C:\kd\Tools\helm\helm.exe install kd-mysql -n mysql --set mysqlRootPassword=debezium --set mysqlUser=mysqluser --set mysqlPassword=mysqlpw --set mysqlDatabase=kddb -f .\mysql\mysql-values.yaml stable/mysql
+
+#-------------------------------------------
+# Access mysql from an interactive shell on the mysqlcli Docker container
+#-------------------------------------------
+mysql -h 192.168.65.3 -P30300 -D kddb -u mysqluser -pmysqlpw
+MySQL [kddb]> select * from customer;
+
+#-------------------------------------------
+# Setup ElasticSearch with Helm in namespace 'kd-es'
+#-------------------------------------------
+C:\KD\Tools\helm\helm repo add elastic https://helm.elastic.co
+c:\kd\tools\helm\helm repo update
+kubectl apply -f es/es-pv.yaml
+kubectl create namespace kd-es
+c:\kd\tools\helm\helm install -f es/es-values.yaml elasticsearch -n kd-es --version 7.9.3 elastic/elasticsearch
+c:\kd\tools\helm\helm install kibana --version 7.9.3 elastic/kibana  -n kd-es -f es/kibana-values.yaml
+
+#-------------------------------------------
+# Setup Confluent with Helm in namespace 'kd-confluent'
+#-------------------------------------------
+kubectl create namespace kd-confluent
+# NB: Since the Persistent Volumes are all the same size, there is a chance that the wrong ones will get bound to
+# the Persistent Volume Claims. eg. the Control Center PV gets bound to the KSQL PVC. So rather than creating all
+# the PVs at once, we might have to create the PVs one at a time, then helm install the corresponding component, and 
+# then create the next PV.
+kubectl apply -f .\kd-confluent\kd-pv.yaml
+cd helm/confluent/helm
+c:\kd\tools\helm\helm upgrade --install  operator  ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set operator.enabled=true
+c:\kd\tools\helm\helm upgrade --install  zookeeper ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set zookeeper.enabled=true
+c:\kd\tools\helm\helm upgrade --install  kafka ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set kafka.enabled=true
+c:\kd\tools\helm\helm upgrade --install  schemaregistry ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set schemaregistry.enabled=true
+c:\kd\tools\helm\helm upgrade --install  connectors ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set connect.enabled=true
+c:\kd\tools\helm\helm upgrade --install  controlcenter ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set controlcenter.enabled=true
+c:\kd\tools\helm\helm upgrade --install  ksql ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set ksql.enabled=true
+
+# Set up a Kafkacat client
+kubectl apply -f ./kd-confluent/kafkacat.yaml -n kd-confluent
+
+#-------------------------------------------
+# Setup Ingress
+#-------------------------------------------
+c:\kd\tools\helm\helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+c:\kd\tools\helm\helm repo update
+c:\kd\tools\helm\helm.exe install ingress ingress-nginx/ingress-nginx -n kd-confluent
+kubectl apply -f .\kd-confluent\kd-ingress.yaml
+
+# Get the Ingress port
+kubectl --namespace kd-confluent get services -o wide -w ingress-ingress-nginx-controller
+
+#-------------------------------------------
+# Helm Commands
+# List Repos and update repos
+C:\kd\Tools\helm\helm.exe repo list
+C:\kd\Tools\helm\helm.exe repo update
 
 # Confluent Control Center port forward and UI
 kubectl port-forward pod/controlcenter-0  9021:9021 -n kd-confluent
