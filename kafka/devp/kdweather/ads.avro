@@ -1,0 +1,37 @@
+{
+    "namespace": "demo",
+    "name": "ads",
+    "type": "record",
+    "fields": [
+        {"name": "ad_id", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {"min": 13, "max": 18}
+            }
+        }},
+        {"name": "channel_id", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {"min": 57, "max": 58}
+            }
+        }},
+        {"name": "start_ts", "type": {
+            "type": "long",
+            "arg.properties": {
+                "range": {
+                    "min": 1612163784,
+                    "max": 1612256136
+                }
+            }
+        }},
+        {"name": "duration_secs", "type": {
+            "type": "int",
+            "arg.properties": {
+                "range": {
+                    "min": 10,
+                    "max": 120
+                }
+            }
+        }}
+    ]
+}

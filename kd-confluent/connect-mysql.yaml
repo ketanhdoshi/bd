@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-connector
+data:
+  mysql-connector.json: '{
+    "name": "kddeb",
+    "config": {
+      "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+      "tasks.max": "1",
+      "database.hostname": "kd-mysql.mysql.svc.cluster.local",
+      "database.port": "3306",
+      "database.user": "mysqluser",
+      "database.password": "mysqlpw",
+      "database.server.id": "223344",
+      "database.server.name": "kdserver1",
+      "database.include.list": "kddb",
+      "database.history.kafka.bootstrap.servers": "kafka:9071",
+      "database.history.kafka.topic": "mysql.kddb",
+      "include.schema.changes": "false",
+      "transforms": "unwrap, createKey, extractInt",
+      "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+      "transforms.createKey.type":"org.apache.kafka.connect.transforms.ValueToKey",
+      "transforms.createKey.fields":"ID",
+      "transforms.extractInt.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+      "transforms.extractInt.field":"ID",
+      "database.history.consumer.security.protocol": "SASL_PLAINTEXT",
+      "database.history.consumer.sasl.mechanism": "PLAIN",
+      "database.history.consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";",
+      "database.history.producer.security.protocol": "SASL_PLAINTEXT",
+      "database.history.producer.sasl.mechanism": "PLAIN",
+      "database.history.producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+    }
+  }'
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysql-connector-deploy
+spec:
+  ttlSecondsAfterFinished: 5
+  template:
+    spec:
+      volumes:
+      - name: mysql-connector
+        configMap:
+          name: mysql-connector
+      containers:
+      - name: mysql-connector-deploy
+        image: cnfldemos/alpine-curl:3.10.2_7.65.1
+        args: [
+          "-s",
+          "-X", "POST",
+          "-H", "Content-Type: application/json",
+          "--data", "@/etc/config/connector/mysql-connector.json",
+          "http://connectors:8083/connectors"
+        ]
+        volumeMounts:
+          - name: mysql-connector
+            mountPath: /etc/config/connector
+      restartPolicy: Never
+  backoffLimit: 1

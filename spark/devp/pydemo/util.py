@@ -8,7 +8,6 @@ from pyspark.sql.functions import *
 
 #-------------------------------------------
 # Read a streaming dataframe from a set of JSON files in a folder, given a schema.
-# Write the dataframe as a stream to the console
 # A single file cannot be read as a stream. You have to read multiple files from
 # a folder. So even though there is only one file, we have to add the wildcard
 # to the file name in the inputPath ie. "action*.json"
@@ -18,21 +17,29 @@ def getFileStream(spark, schema, inputPath):
   df = (spark
       .readStream                 
       .schema(schema)
+      .option("maxFilesPerTrigger", 1)  # Treat a sequence of files as a stream by picking one file at a time
+      #.trigger(ProcessingTime("10 seconds")) # check for files every 10s
       .json(inputPath)
   )
 
-  # Output stream to console
+  # Print schema
   df.printSchema()
-  outStream = (df
-    .writeStream
-    .outputMode("append")
-    .option("forceDeleteTempCheckpointLocation", "true")
-    .format("console")
-    .start()
-  )
 
   # Return the streaming dataframe
   return df
+
+#-------------------------------------------
+# Write a streaming dataframe as a stream to the console
+#-------------------------------------------
+def showStream(df):
+  # Output stream to console
+  outStream = (df
+      .writeStream
+      .outputMode("append")
+      .option("forceDeleteTempCheckpointLocation", "true")
+      .format("console")
+      .start()
+    )
 
 #-------------------------------------------
 # Write a streaming dataframe to a folder. Since it is a stream, a new file will
@@ -52,6 +59,83 @@ def writeFileStream(df, outDir, checkpointDir):
     .option("checkpointLocation", checkpointDir)
     .start()
   )
+
+#-------------------------------------------
+# Read a streaming dataframe from a Kafka topic in JSON
+#-------------------------------------------
+def readKafkaJson(spark, brokers, topic, schema, offset=0, jsonKeySchema=None):
+
+  # Read from the beginning (ie. 'earliest' offset) or from a specific number offset
+  startingOffsets = "earliest" if (offset == 0) else f"""{{ "{topic}": {{ "0": {offset} }} }}"""
+
+  # Subscribe to 1 topic
+  # read data from the start of the stream
+  df = spark \
+    .readStream \
+    .format("kafka") \
+    .option("kafka.bootstrap.servers", brokers) \
+    .option("subscribe", topic) \
+    .option("startingOffsets", startingOffsets) \
+    .option("kafka.sasl.mechanism", "PLAIN") \
+    .option("kafka.security.protocol", "SASL_PLAINTEXT") \
+    .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""") \
+    .load()
+
+  # The Key and Value are binary data, so deserialise them into strings
+  # The Value gets deserialised into a string which we know is in JSON format
+  df = df.selectExpr("CAST(key AS STRING)", \
+                "CAST(value AS STRING)", \
+                "offset", \
+                "CAST(timestamp AS TIMESTAMP)")
+
+  if (jsonKeySchema):
+    # Use keySchema only for JSON formatted keys
+    df = df.select( from_json("key", jsonKeySchema).alias("key"), \
+                    from_json("value", schema).alias("data"), \
+                    col("offset").alias("msgoffset"), \
+                    col("timestamp").alias("msgtime"))
+
+    # Flatten it out so that those columns now appear at the top-level
+    df = df.selectExpr("key.*", "data.*", "msgoffset", "msgtime")
+  else:
+    # Deserialise the JSON into its fields using the given schema. 
+    # The dataframe will now contain columns one level down, nested 
+    # under a structure named 'data'
+    df = df.select(from_json("value", schema).alias("data"), \
+                    col("offset").alias("msgoffset"), \
+                    col("timestamp").alias("msgtime"))
+
+    # Flatten it out so that those columns now appear at the top-level
+    df = df.selectExpr("data.*", "msgoffset", "msgtime")
+
+  df.printSchema()
+  return df
+
+#-------------------------------------------
+# Write a streaming dataframe to a Kafka topic in JSON
+#-------------------------------------------
+def writeKafkaJson(brokers, topic, df, keyField, checkpointDir):
+  # A dataframe must have string or binary columns named 'key' and 'value'
+  # so that it can be written to a Kafka topic. 
+  # The 'value' is set to a JSON string serialised from all fields in the dataframe
+  if (keyField):
+    dfout = df.selectExpr( \
+            f'CAST({keyField} AS STRING) AS key', \
+            "to_json(struct(*)) AS value")
+  else:
+     dfout = df.selectExpr("to_json(struct(*)) AS value")
+
+  #Write the dataframe to a Kafka topic. A checkpoint location must be specified
+  kafkaOutput = dfout.writeStream \
+          .format("kafka") \
+          .option("kafka.bootstrap.servers", brokers) \
+          .option("topic", topic) \
+          .option("kafka.sasl.mechanism", "PLAIN") \
+          .option("kafka.security.protocol", "SASL_PLAINTEXT") \
+          .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""") \
+          .option("checkpointLocation", checkpointDir) \
+          .outputMode("append") \
+          .start()
 
 #-------------------------------------------
 # Read a JSON string into a DataFrame based on a provided schema

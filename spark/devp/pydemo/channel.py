@@ -12,6 +12,7 @@ import session
 import action
 import ad
 import user
+import device_loc
 
 #-------------------------------------------
 #-------------------------------------------
@@ -90,6 +91,17 @@ def getData(spark):
   channelDf = util.jsonToDataFrame(spark, channelJson, channelSchema)
   channelDf.printSchema()
   channelDf.show()
+
+  # root
+  # |-- channel: string (nullable = true)
+  # |-- channel_id: integer (nullable = true)
+  # |-- schedule: map (nullable = true)
+  # |    |-- key: string
+  # |    |-- value: array (valueContainsNull = true)
+  # |    |    |-- element: struct (containsNull = true)
+  # |    |    |    |-- program: string (nullable = true)
+  # |    |    |    |-- program_id: integer (nullable = true)
+  # |    |    |    |-- start: string (nullable = true)
 
   # +-------+----------+--------------------+
   # |channel|channel_id|            schedule|
@@ -240,17 +252,24 @@ def getShowOverlap(showDf, sessionDf):
     .start()
   )
 
+  # Use only the relevant columns and rename them as needed
+  overlapDf = overlapDf.select(
+                "program_id", "program", col("show_channel_id").alias("channel_id"), "channel",
+                "user_id", "device_id",
+                col("over_start_ts").alias("start_ts"), col("over_end_ts").alias("end_ts"))
   return overlapDf
 
+#-------------------------------------------
+#-------------------------------------------
 def getShowDemographic (showByUserDf, userDf):
-  showByUserDf = showByUserDf.select(
-                  "program_id", "program", col("show_channel_id").alias("channel_id"), "channel",
-                  "user_id", "device_id",
-                  col("over_start_ts").alias("start_ts"), col("over_end_ts").alias("end_ts"))
-  userDf = userDf.withColumn("current_timestamp", current_timestamp())
 
+  # Dfs on both sides of the join need an event timestamp field as a watermark, so that 
+  # late-arriving data can be discarded, to prevent unbounded waiting.
+  # The user dataframe has no time column, so we add current time as an artificial column
   showByUserDf = showByUserDf.withWatermark("start_ts", "1 minutes")
-  userDf = userDf.withWatermark("current_timestamp", "1 minutes")
+  userDf = userDf \
+              .withColumn("current_timestamp", current_timestamp()) \
+              .withWatermark("current_timestamp", "1 minutes")
 
   showByUserDf = showByUserDf.withColumnRenamed("user_id", "show_user_id")
   joinDf = showByUserDf.join(userDf, (showByUserDf.show_user_id == userDf.user_id), "inner")
@@ -323,17 +342,25 @@ def getAdOverlap(adDf, sessionDf):
     .format("console")
     .start()
   )
-  return overlapDf
 
-def getAdDemographic (adByUserDf, userDf):
-  adByUserDf = adByUserDf.select(
+  # Use only the relevant columns and rename them as needed
+  overlapDf = overlapDf.select(
                   "ad_id", col("ad_channel_id").alias("channel_id"), 
                   "user_id", "device_id",
                   col("over_start_ts").alias("start_ts"), col("over_end_ts").alias("end_ts"))
-  userDf = userDf.withColumn("current_timestamp", current_timestamp())
+  return overlapDf
 
+#-------------------------------------------
+#-------------------------------------------
+def getAdDemographic (adByUserDf, userDf):
+
+  # Dfs on both sides of the join need an event timestamp field as a watermark, so that 
+  # late-arriving data can be discarded, to prevent unbounded waiting.
+  # The user dataframe has no time column, so we add current time as an artificial column
   adByUserDf = adByUserDf.withWatermark("start_ts", "1 minutes")
-  userDf = userDf.withWatermark("current_timestamp", "1 minutes")
+  userDf = userDf \
+              .withColumn("current_timestamp", current_timestamp()) \
+              .withWatermark("current_timestamp", "1 minutes")
 
   adByUserDf = adByUserDf.withColumnRenamed("user_id", "ad_user_id")
   joinDf = adByUserDf.join(userDf, (adByUserDf.ad_user_id == userDf.user_id), "inner")
@@ -362,49 +389,270 @@ def getAdDemographic (adByUserDf, userDf):
   return joinDf
 
 #-------------------------------------------
-# Create a Spark Session and process the Channel data
+# This is a temporary convenience function only
+
+# Save the showDemographic dataframe as an intermediate result to a Kafka topic
+# as a way to save time, so we can simply read those results for subsequent processing
+# instead of running all the processing from scratch each time
 #-------------------------------------------
-spark = SparkSession.builder.appName("Nested Json").getOrCreate()
+def saveShowDemographicKafka (showDemographicDf, dataDir):
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "json_topic"
+  util.writeKafkaJson(brokers, topic, showDemographicDf, None, dataDir + "/checkpoint_kafka")
+
+#-------------------------------------------
+# This is a temporary convenience function only
+# Load the previously saved intermediate data
+#-------------------------------------------
+def loadShowDemographicKafka ():
+  # {"program_id":13,"channel_id":57,"program":"Living Planet","channel":"BBC","user_id":46,"device_id":17,"name":"vihaan","age":18,"gender":"M","start_ts":"2021-02-01T09:20:16.000Z","end_ts":"2021-02-01T09:36:56.000Z"}    
+  schema = StructType() \
+          .add("program_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("program", StringType()) \
+          .add("channel", StringType()) \
+          .add("user_id", IntegerType()) \
+          .add("device_id", IntegerType()) \
+          .add("name", StringType()) \
+          .add("age", IntegerType()) \
+          .add("gender", StringType()) \
+          .add("start_ts", StringType()) \
+          .add("end_ts", StringType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "json_topic"
+  showDemographicDf = util.readKafkaJson(spark, brokers, topic, schema, offset=36)
+  return showDemographicDf
+
+#-------------------------------------------
+#-------------------------------------------
+def getShowDemographicLocation(showDemographicDf, deviceLocDf):
+  # Comment it out for now because start_ts is a string in the Kafka intermediate.
+  # But in reality it will be a timestamp, so uncomment it when we are not loading
+  # the intermediate from Kafka.
+  #showDemographicDf = showDemographicDf.withWatermark("start_ts", "10 seconds")
+  showDemographicDf = showDemographicDf \
+                      .withColumn("current_timestamp", current_timestamp()) \
+                      .withWatermark("current_timestamp", "10 seconds")
+  deviceLocDf = deviceLocDf \
+              .withColumn("current_timestamp", current_timestamp()) \
+              .withWatermark("current_timestamp", "3 minutes")
+
+  showDemographicDf = showDemographicDf.withColumnRenamed("device_id", "show_device_id")
+  joinDf = showDemographicDf.join(deviceLocDf, (showDemographicDf.show_device_id == deviceLocDf.device_id), "inner")
+  joinDf = joinDf.select ("program_id", "channel_id", "program", "channel", 
+                          "user_id", "name", "age", "gender", 
+                          "device_id", "lon", "lat", "visibility",
+                          "start_ts", "end_ts")
+  return joinDf
+
+#-------------------------------------------
+# Read and Write to a Kafka JSON topic for testing Kafka Integration
+#-------------------------------------------
+def doKafkaTest(spark, dataDir):
+  # {"id":1,"firstname":"James ","middlename":"","lastname":"Smith","dob_year":2018,"dob_month":1,"gender":"M","salary":3000}
+  schema = StructType() \
+          .add("id", IntegerType()) \
+          .add("firstname", StringType()) \
+          .add("middlename", StringType()) \
+          .add("lastname", StringType()) \
+          .add("dob_year", IntegerType()) \
+          .add("dob_month", IntegerType()) \
+          .add("gender", StringType()) \
+          .add("salary", IntegerType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "json_spark"
+
+  # +---+---------+----------+--------+--------+---------+------+------+---------+--------------------+
+  # | id|firstname|middlename|lastname|dob_year|dob_month|gender|salary|msgoffset|             msgtime|
+  # +---+---------+----------+--------+--------+---------+------+------+---------+--------------------+
+  # |  1|   James |          |   Smith|    2018|        1|     M|  3000|        0|2021-01-22 05:53:...|
+  # |  2| Michael |      Rose|        |    2010|        3|     M|  4000|        1|2021-01-22 05:53:...|
+  # |  3|  Robert |          |Williams|    2010|        3|     M|  4000|        2|2021-01-22 07:32:...|
+  # +---+---------+----------+--------+--------+---------+------+------+---------+--------------------+
+
+  kdf = util.readKafkaJson(spark, brokers, topic, schema, offset=0)
+  util.showStream(kdf)
+  util.writeKafkaJson(brokers, topic, kdf, "id", dataDir + "/checkpoint_kafka")
+
+#-------------------------------------------
+# Read from Kafka Customer JSON topic
+#-------------------------------------------
+def readKafkaCustomer(spark, offset):
+  # 
+  schema = StructType() \
+          .add("ID", IntegerType()) \
+          .add("FIRST_NAME", StringType()) \
+          .add("LAST_NAME", StringType()) \
+          .add("EMAIL", StringType()) \
+          .add("CLUB_STATUS", StringType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "kdserver1.kddb.customer"
+
+  kdf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  util.showStream(kdf)
+  return kdf
+
+#-------------------------------------------
+# Read from Kafka Ad JSON topic
+#-------------------------------------------
+def readKafkaAd(spark, offset):
+  # 
+  schema = StructType() \
+          .add("ad_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("start_ts", TimestampType()) \
+          .add("duration_secs", IntegerType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "testad1"
+
+  kdf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  # Get the 'end_ts' by adding the 'start_ts' and 'duration_secs'. Since 'start_ts' is a timestamp column
+  # cast it to integer, add the duration, and then convert back to timestamp.
+  kdf = kdf.withColumn("end_ts", (col("start_ts").cast("integer") + col("duration_secs")).cast("timestamp"))
+  util.showStream(kdf)
+  return kdf
+
+#-------------------------------------------
+# Read from Kafka Dev Location JSON topic
+#-------------------------------------------
+def readKafkaLoc(spark, offset):
+  # 
+  schema = StructType() \
+          .add("kdct", StringType()) \
+          .add("name", StringType()) \
+          .add("visibility", IntegerType()) \
+          .add("lon", FloatType()) \
+          .add("lat", FloatType())
+
+  jsonKeySchema = StructType() \
+          .add("id", IntegerType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "testloc1"
+
+  kdf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset, jsonKeySchema=jsonKeySchema)
+  fmt = "yyyy/MM/dd HH:mm:ss"
+  kdf = kdf.transform (partial(util.StrToTimestamp, strColName="kdct", tsColName="kdts", fmt=fmt))
+
+  util.showStream(kdf)
+  return kdf
+
+#-------------------------------------------
+# Read from Kafka Action JSON topic
+#-------------------------------------------
+def readKafkaAction(spark, offset):
+  # 
+  schema = StructType() \
+          .add("user", StringType()) \
+          .add("user_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("device_id", IntegerType()) \
+          .add("action", IntegerType()) \
+          .add("action_ts", TimestampType())
+
+  brokers = "kafka.kd-confluent.svc.cluster.local:9071"
+  topic = "testaction1"
+
+  kdf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  util.showStream(kdf)
+  return kdf
+
+#-------------------------------------------
+# Get Actions and Sessions data
+#-------------------------------------------
+def doActionSession():
+  # Process actions - Commented out because Actions will be processed from Scala
+  # actionDf = action.getData(spark)
+
+  # Process sessions
+  sessionDf = session.getData(spark)
+  return sessionDf
+
+#-------------------------------------------
+# Get Channels and Show data
+#-------------------------------------------
+def doChannelShow():
+  # Process channels
+  jsonDf = getData(spark)
+  dataDir = sys.argv[1] + "/"
+  parquetDf = getParquet(jsonDf, dataDir)
+
+  # Process shows (from channels)
+  flatDf = flattenShows(parquetDf)
+  showDf = getEndTime(flatDf)
+  return showDf
+
+#-------------------------------------------
+# Get Show with Demographic
+#-------------------------------------------
+def doShowDemographic(showDf, sessionDf):
+  # Process users
+  userDf = user.getData(spark, dataDir)
+
+  # Sessions with shows
+  showByUserDf = getShowOverlap(showDf, sessionDf)
+
+  # Shows by User, enriched with Demographic info
+  showDemographicDf = getShowDemographic (showByUserDf, userDf)
+
+  return showDemographicDf
+
+#-------------------------------------------
+# Get Ad with Demographic
+#-------------------------------------------
+def doAdDemographic(sessionDf):
+  # Process users
+  userDf = user.getData(spark, dataDir)
+
+  # Process ads
+  adDf = ad.getData(spark)
+
+  # Sessions with ads
+  adByUserDf = getAdOverlap(adDf, sessionDf)
+
+  # Ads by User, enriched with Demographic info
+  adDemographicDf = getAdDemographic (adByUserDf, userDf)
+
+  return adDemographicDf
+
+#-------------------------------------------
+# Create a Spark Session and process all the data sources
+#-------------------------------------------
+def main(spark, dataDir, useKafka):
+
+  sessionDf = doActionSession()
+  showDf = doChannelShow()
+  showDemographicDf = doShowDemographic(showDf, sessionDf)
+  doAdDemographic(sessionDf)
+
+  if (useKafka):
+    # doKafkaTest(spark, dataDir)
+    # Save intermediate state to Kafka as a shortcut for use by downstream processing
+    # saveShowDemographicKafka (showDemographicDf, dataDir)
+    showDemographicDf = loadShowDemographicKafka()
+
+  # Process device locations
+  deviceLocDf = device_loc.getData(spark, dataDir)
+  util.showStream(showDemographicDf)
+  showDemographicLocDf = getShowDemographicLocation(showDemographicDf, deviceLocDf)
+  util.showStream(showDemographicLocDf)
+
+
+useKafka=True
+spark = SparkSession.builder.appName("KD Demo").getOrCreate()
+# Turn off INFO and DEBUG logging
+spark.sparkContext.setLogLevel("ERROR")
 dataDir = sys.argv[1]
 
-# Process actions
-# actionDf = action.getData(spark)
+#main(spark, dataDir, useKafka)
+#readKafkaCustomer(spark, offset=6)
+#readKafkaAd(spark, offset=3)
+#readKafkaLoc(spark, offset=20)
+readKafkaAction(spark, offset=1)
 
-# Process sessions
-sessionDf = session.getData(spark)
-
-# Process channels
-jsonDf = getData(spark)
-dataDir = sys.argv[1] + "/"
-parquetDf = getParquet(jsonDf, dataDir)
-
-# Process shows (from channels)
-flatDf = flattenShows(parquetDf)
-showDf = getEndTime(flatDf)
-
-# Sessions with shows
-showByUserDf = getShowOverlap(showDf, sessionDf)
-
-# Process users
-userDf = user.getData(spark, dataDir)
-
-# Shows by User, enriched with Demographic info
-showDemographicDf = getShowDemographic (showByUserDf, userDf)
-
-""" # Process ads
-adDf = ad.getData(spark)
-
-# Sessions with ads
-adByUserDf = getAdOverlap(adDf, sessionDf)
-
-# Ads by User, enriched with Demographic info
-adDemographicDf = getAdDemographic (adByUserDf, userDf) """
-
-spark.streams.awaitAnyTermination(10000)
+spark.streams.awaitAnyTermination(300000)
 print("========== DONE ==========" )
-
-""" # Write the data to a file as a temporary short-cut so we don't have to re-run this
-# whole execution every time
-outDir = dataDir + "/out_adUser"
-util.writeFileStream(adByUserDf, outDir, checkpointDir=outDir + "/checkpoint_adUser")
- """

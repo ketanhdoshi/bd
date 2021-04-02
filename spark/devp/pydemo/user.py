@@ -21,6 +21,7 @@ def getData(spark, dataDir):
 
   inputPath = dataDir + "/user*.json"
   userDf = util.getFileStream(spark, userSchema, inputPath)
+  util.showStream(userDf)
 
   # +-------+-------+---+------+
   # |user_id|   name|age|gender|

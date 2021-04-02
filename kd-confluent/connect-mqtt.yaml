@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mqtt-connector
+data:
+  mqtt-connector.json: '{
+    "name": "kdmqtt",
+    "config": {
+      "connector.class" : "io.confluent.connect.mqtt.MqttSourceConnector",
+      "tasks.max" : "1",
+      "mqtt.server.uri" : "tcp://kd-mosquitto.kd-mqtt.svc.cluster.local:1883",
+      "mqtt.topics" : "action",
+      "kafka.topic" : "testaction1",
+      "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+      "confluent.topic.bootstrap.servers": "kafka:9071",
+      "confluent.topic.security.protocol": "SASL_PLAINTEXT",
+      "confluent.topic.sasl.mechanism": "PLAIN",
+      "confluent.topic.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";"
+    }
+  }'
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mqtt-connector-deploy
+spec:
+  ttlSecondsAfterFinished: 5
+  template:
+    spec:
+      volumes:
+      - name: mqtt-connector
+        configMap:
+          name: mqtt-connector
+      containers:
+      - name: mqtt-connector-deploy
+        image: cnfldemos/alpine-curl:3.10.2_7.65.1
+        args: [
+          "-s",
+          "-X", "POST",
+          "-H", "Content-Type: application/json",
+          "--data", "@/etc/config/connector/mqtt-connector.json",
+          "http://connectors:8083/connectors"
+        ]
+        volumeMounts:
+          - name: mqtt-connector
+            mountPath: /etc/config/connector
+      restartPolicy: Never
+  backoffLimit: 1

@@ -36,6 +36,20 @@ c:\kd\tools\helm\helm install -f es/es-values.yaml elasticsearch -n kd-es --vers
 c:\kd\tools\helm\helm install kibana --version 7.9.3 elastic/kibana  -n kd-es -f es/kibana-values.yaml
 
 #-------------------------------------------
+# Setup Mosquitto with Helm in namespace 'kd-mqtt'
+#-------------------------------------------
+C:\KD\Tools\helm\helm repo add t3n https://storage.googleapis.com/t3n-helm-charts
+C:\KD\Tools\helm\helm search repo mosquitto
+c:\kd\tools\helm\helm repo update
+kubectl apply -f ./mosquitto/mqtt-pv.yaml
+kubectl create namespace kd-mqtt
+c:\kd\tools\helm\helm install kd-mosquitto t3n/mosquitto --version 2.2.0 -f .\mosquitto\mqtt-values.yaml -n kd-mqtt
+
+# Test Mosquitto from two separate terminals on the Mosquitto container
+mosquitto_sub -h kd-mosquitto -t dummy -C 5
+mosquitto_pub -h kd-mosquitto -t dummy -m "Hello world again"
+
+#-------------------------------------------
 # Setup Confluent with Helm in namespace 'kd-confluent'
 #-------------------------------------------
 kubectl create namespace kd-confluent
@@ -54,7 +68,17 @@ c:\kd\tools\helm\helm upgrade --install  controlcenter ./confluent-operator  --v
 c:\kd\tools\helm\helm upgrade --install  ksql ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set ksql.enabled=true
 
 # Set up a Kafkacat client
+cd ../../..
 kubectl apply -f ./kd-confluent/kafkacat.yaml -n kd-confluent
+
+#-------------------------------------------
+# Setup Connectors
+#-------------------------------------------
+# Debezium MySql
+kubectl -n kd-confluent apply -f .\kd-confluent\connect-mysql.yaml
+
+# Mosquitto MQTT
+kubectl -n kd-confluent apply -f .\kd-confluent\connect-mqtt.yaml
 
 #-------------------------------------------
 # Setup Ingress
@@ -68,10 +92,128 @@ kubectl apply -f .\kd-confluent\kd-ingress.yaml
 kubectl --namespace kd-confluent get services -o wide -w ingress-ingress-nginx-controller
 
 #-------------------------------------------
+# Setup Spark
+#-------------------------------------------
+kubectl create namespace spark-app
+c:\kd\tools\helm\helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
+c:\kd\tools\helm\helm repo update
+c:\kd\tools\helm\helm install sparkop spark-operator/spark-operator --namespace spark-operator --create-namespace --set sparkJobNamespace=spark-app --set webhook.enable=true --set image.tag=latest
+
+#-------------------------------------------
+# Run Spark examples
+#-------------------------------------------
+kubectl delete sparkapplication spark-pi -n spark-app
+kubectl apply -f ./kd-spark/spark-pi.yaml
+
+kubectl delete sparkapplication pyspark-pi  -n spark-app
+kubectl apply -f ./kd-spark/spark-python.yaml
+
+kubectl apply -f ./kd-spark/kd-py-simple.yaml 
+kubectl delete sparkapplication kd-py-simple
+
+kubectl apply -f ./kd-spark/kd-py-channel.yaml   
+kubectl delete sparkapplication kd-py-channel
+
+kubectl apply -f ./kd-spark/kd-py-channel-kafka.yaml
+kubectl delete sparkapplication kd-py-channel-kafka
+
+#-------------------------------------------
+# Kafkacat commands
+#-------------------------------------------
+
+# Internal Kafkacat within kd-confluent namespace - list topics, produce and consume messages
+kafkacat -b kafka:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
+kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
+kafkacat -b kafka:9071 -t qe -C -F /etc/kafka-client-properties/kafka-client.properties
+
+# Get Connector offsets
+kafkacat -b kafka:9071-C -t kd-confluent.connectors-offsets -f 'Partition(%p) %k %s\n' -F /etc/kafka-client-properties/kafka-client.properties
+# Partition(8) ["kddeb",{"server":"kdserver1"}] {"file":"mysql-bin.000024","pos":154}
+# Partition(8) ["kddeb",{"server":"kdserver1"}] {"ts_sec":1609739412,"file":"mysql-bin.000024","pos":219,"row":1,"server_id":223344,"event":2}
+# Partition(8) ["kddeb",{"server":"kdserver1"}] {"ts_sec":1609740058,"file":"mysql-bin.000024","pos":501,"row":1,"server_id":223344,"event":2}
+# Partition(8) ["kddeb",{"server":"kdserver1"}] {"ts_sec":1609751757,"file":"mysql-bin.000024","pos":785,"row":1,"server_id":223344,"event":2}
+
+# Reset Connector offsets for a specific connector for partition 8
+echo '["kddeb",{"server":"kdserver1"}]|' | \
+kafkacat -P -Z -b kafka:9071 -t kd-confluent.connectors-offsets -K \| -p 8 -F /etc/kafka-client-properties/kafka-client.properties
+
+# Produce with key. So input <key>:<value>
+kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
+
+# Internal Kafkacat outside kd-confluent namespace - list topics, produce and consume messages
+kafkacat -b kafka.kd-confluent.svc.cluster.local:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
+
+# External Kafkacat
+kafkacat -b 192.168.65.3:30220 -L -F kafka.properties
+
+#-------------------------------------------
 # Helm Commands
+#-------------------------------------------
 # List Repos and update repos
 C:\kd\Tools\helm\helm.exe repo list
 C:\kd\Tools\helm\helm.exe repo update
+
+#-------------------------------------------
+# Run Connectors on Dev Kafka container (ie. on KDWeather container)
+#-------------------------------------------
+# Install Datagen connector
+confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
+
+# Start the Kafka Connect server
+/etc/confluent/docker/run &
+
+# Configure Datagen Connector for Ads data 
+curl -X PUT http://localhost:8083/connectors/kd-ads-01/config \
+    -s -H  "Content-Type:application/json" \
+    -d '{
+        "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+        "kafka.topic": "testad1",
+        "schema.filename": "/kdweather/ads.avro",
+        "schema.keyfield": "ad_id",
+        "value.converter.schemas.enable": "false",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "max.interval": 7500,
+        "iterations": 5,
+        "tasks.max": "1"
+    }'
+
+# List all installed connectors from Dev Kafka Connect
+curl -X GET  http://localhost:8083/connectors/
+
+# Delete Datagen Connector
+curl -XDELETE 'http://localhost:8083/connectors/kd-ads-01'
+
+#-------- custom KDWeather Connector ----
+
+# Install Custom Weather plugin for OpenWeather REST API data on Dev Kafka Connect
+confluent-hub install --no-prompt /kdweather/target/components/packages/kdoshi-myweather-1.0-SNAPSHOT.zip
+
+# Create Custom Weather Connector on Dev Kafka Connect
+curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/kd-weather-01/config \
+            -d '{
+                  "connector.class" : "com.kd.kdw.MySourceConnector",
+                  "tasks.max" : "1",
+                  "key.converter": "com.kd.kdw.MyConverter",
+                  "value.converter": "com.kd.kdw.MyConverter",
+                  "cities": "Ireland, Peru, Brazil, Argentina, Chile",
+                  "topic": "kdweather_topic",
+                  "sleep.seconds": 60,
+                  "transforms": "insertcurrenttime",
+                  "transforms.insertcurrenttime.type": "com.kd.kdw.InsertCurrentTime$Value",
+                  "transforms.insertcurrenttime.ct.field.name": "kdct"
+        }'
+
+# To format the Weather Connector messages as Json, add this to the config above
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+
+# Delete Weather Connector
+curl -XDELETE 'http://localhost:8083/connectors/kd-weather-01'
+
+#-------------------------------------------
+# MISC
+#-------------------------------------------
 
 # Confluent Control Center port forward and UI
 kubectl port-forward pod/controlcenter-0  9021:9021 -n kd-confluent
@@ -85,19 +227,7 @@ http://localhost:5601
 docker logs c919509dc787d0a0e8a585fcfdc909cc670e3d1988f9a9421a41a7f24a5f71ec 2>&1 >kdccc.log
 docker logs 1ad1de2bec4351c192abf3e52f6899cc6b4cd59a2fad539cb6fbd6950bb08303 2>&1 >kdkfk.log
 
-# Internal Kafkacat within kd-confluent namespace - list topics, produce and consume messages
-kafkacat -b kafka:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
-kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
-kafkacat -b kafka:9071 -t qe -C -F /etc/kafka-client-properties/kafka-client.properties
 
-# Produce with key. So input <key>:<value>
-kafkacat -b kafka:9071 -t qe -P -F /etc/kafka-client-properties/kafka-client.properties
-
-# Internal Kafkacat outside kd-confluent namespace - list topics, produce and consume messages
-kafkacat -b kafka.kd-confluent.svc.cluster.local:9071 -L -F /etc/kafka-client-properties/kafka-client.properties
-
-# External Kafkacat
-kafkacat -b 192.168.65.3:30220 -L -F kafka.properties
 
 # On Mosquitto container - publish and consume messages
 mosquitto_pub -h kd-mosquitto -t temperature -m "good morning"
@@ -234,30 +364,7 @@ kafka-avro-console-consumer --topic kdserver1.kddb.customer --bootstrap-server k
 # Remove connector from K8s Kafka Connect
 curl -XDELETE 'http://connectors:8083/connectors/kdgens'
 
-# Install Custom Weather plugin on Dev Kafka Connect
-confluent-hub install --no-prompt /kdweather/target/components/packages/kdoshi-myweather-1.0-SNAPSHOT.zip
 
-# Create Custom Weather Connector on Dev Kafka Connect
-curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/kd-weather-01/config \
-            -d '{
-                  "connector.class" : "com.kd.kdw.MySourceConnector",
-                  "tasks.max" : "1",
-                  "key.converter": "com.kd.kdw.MyConverter",
-                  "value.converter": "com.kd.kdw.MyConverter",
-                  "cities": "Ireland, Peru, Brazil, Argentina, Chile",
-                  "topic": "kdweather_topic",
-                  "sleep.seconds": 60,
-                  "transforms": "insertcurrenttime",
-                  "transforms.insertcurrenttime.type": "com.kd.kdw.InsertCurrentTime$Value",
-                  "transforms.insertcurrenttime.ct.field.name": "kdct"
-        }'
-
-# To format the Weather Connector messages as Json, add this to the config above
-      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
-      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-
-# Get connectors from Dev Kafka Connect
-curl -X GET  http://localhost:8083/connectors/
 
 # Custom Connector
 mvn archetype:generate \

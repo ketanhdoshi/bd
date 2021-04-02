@@ -12,3 +12,37 @@ curl -X PUT http://localhost:8083/connectors/kd-events-08/config \
         "iterations": 3,
         "tasks.max": "1"
     }'
+
+curl -X PUT http://localhost:8083/connectors/kd-ads-01/config \
+    -s -H  "Content-Type:application/json" \
+    -d '{
+        "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+        "kafka.topic": "testad1",
+        "schema.filename": "/kdweather/ads.avro",
+        "schema.keyfield": "ad_id",
+        "value.converter.schemas.enable": "false",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "max.interval": 7500,
+        "iterations": 5,
+        "tasks.max": "1"
+    }'
+
+curl -XDELETE 'http://localhost:8083/connectors/kd-ads-01'
+
+# Generate data for Demo in JSON
+curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/kd-weather-01/config \
+            -d '{
+                  "connector.class" : "com.kd.kdw.MySourceConnector",
+                  "tasks.max" : "1",
+                  "cities": "Ireland, Peru, Brazil, Argentina, Chile",
+                  "topic": "testloc1",
+                  "sleep.seconds": 60,
+                  "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+                  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+                  "key.converter.schemas.enable": "false",
+                  "value.converter.schemas.enable": "false",
+                  "transforms": "insertcurrenttime",
+                  "transforms.insertcurrenttime.type": "com.kd.kdw.InsertCurrentTime$Value",
+                  "transforms.insertcurrenttime.ct.field.name": "kdct"
+        }'
