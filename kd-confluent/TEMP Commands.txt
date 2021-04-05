@@ -80,6 +80,9 @@ kubectl -n kd-confluent apply -f .\kd-confluent\connect-mysql.yaml
 # Mosquitto MQTT
 kubectl -n kd-confluent apply -f .\kd-confluent\connect-mqtt.yaml
 
+# ES
+kubectl -n kd-confluent apply -f .\kd-confluent\connect-es.yaml
+
 #-------------------------------------------
 # Setup Ingress
 #-------------------------------------------

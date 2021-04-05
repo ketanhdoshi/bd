@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: es-connector
+data:
+  es-connector.json: '{
+    "name": "kdes",
+    "config": {
+      "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+      "topics": "testAdOut1",
+      "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "connection.url": "http://elasticsearch-master.kd-es.svc.cluster.local:9200",
+      "type.name": "_doc",
+      "key.ignore": "true",
+      "schema.ignore": "true",
+      "value.converter.schemas.enable": "false"
+    }
+  }'
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-connector-deploy
+spec:
+  ttlSecondsAfterFinished: 5
+  template:
+    spec:
+      volumes:
+      - name: es-connector
+        configMap:
+          name: es-connector
+      containers:
+      - name: es-connector-deploy
+        image: cnfldemos/alpine-curl:3.10.2_7.65.1
+        args: [
+          "-s",
+          "-X", "POST",
+          "-H", "Content-Type: application/json",
+          "--data", "@/etc/config/connector/es-connector.json",
+          "http://connectors:8083/connectors"
+        ]
+        volumeMounts:
+          - name: es-connector
+            mountPath: /etc/config/connector
+      restartPolicy: Never
+  backoffLimit: 1

@@ -1,0 +1,62 @@
+{
+  "component_templates": [
+    {
+      "name": "kd-date-component",
+      "component_template": {
+        "template": {
+          "mappings": {
+            "_routing": {
+              "required": false
+            },
+            "numeric_detection": false,
+            "dynamic_date_formats": [
+              "strict_date_optional_time",
+              "yyyy/MM/dd HH:mm:ss Z||yyyy/MM/dd Z"
+            ],
+            "_source": {
+              "excludes": [],
+              "includes": [],
+              "enabled": true
+            },
+            "dynamic": true,
+            "date_detection": true,
+            "properties": {
+              "start_ts": {
+                "format": "epoch_second",
+                "index": true,
+                "ignore_malformed": false,
+                "store": false,
+                "type": "date",
+                "doc_values": true
+              },
+              "end_ts": {
+                "format": "epoch_second",
+                "index": true,
+                "ignore_malformed": false,
+                "store": false,
+                "type": "date",
+                "doc_values": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+
+{
+  "index_templates": [
+    {
+      "name": "kd-ad-template",
+      "index_template": {
+        "index_patterns": [
+          "testAdOut*"
+        ],
+        "composed_of": [
+          "kd-date-component"
+        ]
+      }
+    }
+  ]
+}
