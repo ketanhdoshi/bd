@@ -12,7 +12,7 @@ import util
 #-------------------------------------------
 # Read a streaming dataframe of user data from JSON files
 #-------------------------------------------
-def getData(spark, dataDir):
+def readFileStream(spark, dataDir):
   userSchema = StructType() \
           .add("user_id", IntegerType()) \
           .add("name", StringType()) \
@@ -33,3 +33,30 @@ def getData(spark, dataDir):
 
   return userDf
 
+
+#-------------------------------------------
+# Read from Kafka Customer JSON topic
+#-------------------------------------------
+def readKafkaStream(spark, brokers, topic, offset):
+  # 
+  schema = StructType() \
+          .add("ID", IntegerType()) \
+          .add("user_name", StringType()) \
+          .add("age", IntegerType()) \
+          .add("gender", StringType())
+
+  userDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  userDf = userDf.withColumnRenamed("ID", "user_id") \
+                 .withColumnRenamed("user_name", "name")
+  util.showStream(userDf)
+  return userDf
+
+#-------------------------------------------
+# Get User data stream
+#-------------------------------------------
+def doUser(spark, dataDir, brokers, topic, offset, fromKafka):
+  if (fromKafka):
+    userDf = readKafkaStream(spark, brokers, topic, offset)
+  else:
+    userDf = readFileStream(spark, dataDir)
+  return userDf

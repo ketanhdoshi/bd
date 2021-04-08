@@ -157,6 +157,14 @@ C:\kd\Tools\helm\helm.exe repo list
 C:\kd\Tools\helm\helm.exe repo update
 
 #-------------------------------------------
+# Demo Commands - MQTT
+#-------------------------------------------
+# Manually copy action.json to MQTT volume
+# Then, from MQTT containers
+mv /mosquitto/data/action.json .
+cat action.json | awk '{print $0; system("sleep 1");}' | mosquitto_pub -h kd-mosquitto -t action -l
+
+#-------------------------------------------
 # Run Connectors on Dev Kafka container (ie. on KDWeather container)
 #-------------------------------------------
 # Install Datagen connector

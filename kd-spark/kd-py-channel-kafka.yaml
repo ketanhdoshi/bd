@@ -9,7 +9,7 @@ spec:
   mode: cluster
   image: "gcr.io/spark-operator/spark-py:v3.0.0"
   imagePullPolicy: Always
-  mainApplicationFile: local:///tmp/dev/pydemo/channel.py
+  mainApplicationFile: local:///tmp/dev/pydemo/demo.py
   arguments: 
     # - "kafka.kd-confluent.svc.cluster.local:9071"
     # - "json_spark"

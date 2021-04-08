@@ -12,7 +12,7 @@ import util
 #-------------------------------------------
 # Read a streaming dataframe of device location data from JSON files
 #-------------------------------------------
-def getData(spark, dataDir):
+def readFileStream(spark, dataDir):
   deviceLocSchema = StructType() \
           .add("device_id", IntegerType()) \
           .add("name", StringType()) \
@@ -24,7 +24,8 @@ def getData(spark, dataDir):
 
   inputPath = dataDir + "/device_loc*.json"
   deviceLocDf = util.getFileStream(spark, deviceLocSchema, inputPath)
-  deviceLocDf = processData(deviceLocDf)
+  deviceLocDf = deviceLocDf.select("device_id", col("name").alias("location"), "visibility", "coord.*")
+  #deviceLocDf = processData(deviceLocDf)
   util.showStream(deviceLocDf)
 
       # +---------+-----------+----------+------+------+
@@ -44,7 +45,7 @@ def processData(deviceLocDf):
   # The windowing aggregation only closes its window and outputs results when it receives
   # the next batch of data. So we keep several "device_loc*.json" files in the folder.
   deviceLocDf = deviceLocDf \
-                  .select("device_id", col("name").alias("location"), "visibility", "coord.*") \
+                  .select("device_id", "location", "visibility", "coord.*") \
                   .withColumn("timestamp", current_timestamp()) \
                   .withWatermark("timestamp", "5 seconds") \
                   .groupBy( \
@@ -66,3 +67,36 @@ def processData(deviceLocDf):
   
   return deviceLocDf
 
+#-------------------------------------------
+# Read from Kafka Device Location JSON topic
+#-------------------------------------------
+def readKafkaStream(spark, brokers, topic, offset):
+  # 
+  schema = StructType() \
+          .add("kdct", StringType()) \
+          .add("name", StringType()) \
+          .add("visibility", IntegerType()) \
+          .add("lon", FloatType()) \
+          .add("lat", FloatType())
+
+  jsonKeySchema = StructType() \
+          .add("id", IntegerType())
+
+  deviceLocDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset, jsonKeySchema=jsonKeySchema)
+  deviceLocDf = deviceLocDf.withColumnRenamed("id", "device_id") \
+                           .withColumnRenamed("name", "location")
+  fmt = "yyyy/MM/dd HH:mm:ss"
+  deviceLocDf = deviceLocDf.transform (partial(util.StrToTimestamp, strColName="kdct", tsColName="kdts", fmt=fmt))
+
+  util.showStream(deviceLocDf)
+  return deviceLocDf
+
+#-------------------------------------------
+# Get Device Location data stream
+#-------------------------------------------
+def doDeviceLoc(spark, dataDir, brokers, topic, offset, fromKafka):
+  if (fromKafka):
+    deviceLocDf = readKafkaStream(spark, brokers, topic, offset)
+  else:
+    deviceLocDf = readFileStream(spark, dataDir)
+  return deviceLocDf

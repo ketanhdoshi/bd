@@ -10,8 +10,9 @@ from pyspark.sql.window import Window
 import util
 
 #-------------------------------------------
+# Read a streaming dataframe of session data from JSON files
 #-------------------------------------------
-def getData(spark):
+def readFileStream(spark, dataDir):
   sessionSchema = StructType() \
           .add("user_id", IntegerType()) \
           .add("device_id", IntegerType()) \
@@ -49,6 +50,56 @@ def getData(spark):
 
   return sessionDf
 
+#-------------------------------------------
+# Read from Kafka Session JSON topic
+#-------------------------------------------
+def readKafkaStream(spark, brokers, topic, offset):
+  # 
+  schema = StructType() \
+          .add("user_id", IntegerType()) \
+          .add("device_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("start_ts", TimestampType()) \
+          .add("end_ts", TimestampType())
+
+  sessionDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  util.showStream(sessionDf)
+  return sessionDf
+
+#-------------------------------------------
+# Get Session data stream
+#-------------------------------------------
+def doSession(spark, dataDir, brokers, topic, offset, fromKafka):
+  # Note that Actions will be processed from Scala
+
+  if (fromKafka):
+    sessionDf = readKafkaStream(spark, brokers, topic, offset)
+  else:
+    sessionDf = readFileStream(spark, dataDir)
+  return sessionDf
+
+#-------------------------------------------
+# Read from Kafka Action JSON topic
+# Action data will be read and processed to Sessions from Scala.
+# This is here only to quickly test the Action data in the Kafka topic.
+#-------------------------------------------
+def readKafkaAction(spark, brokers, topic, offset):
+  # 
+  schema = StructType() \
+          .add("user", StringType()) \
+          .add("user_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("device_id", IntegerType()) \
+          .add("action", IntegerType()) \
+          .add("action_ts", TimestampType())
+
+  actionDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  util.showStream(actionDf)
+  return actionDf
+
+#-------------------------------------------
+# Obsolete: Sessions Static data (non-streaming)
+#-------------------------------------------
 def getDataStatic(spark):
   sessionJson = """[
     {
