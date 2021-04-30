@@ -114,12 +114,6 @@ kubectl apply -f ./kd-spark/spark-python.yaml
 kubectl apply -f ./kd-spark/kd-py-simple.yaml 
 kubectl delete sparkapplication kd-py-simple
 
-kubectl apply -f ./kd-spark/kd-py-channel.yaml   
-kubectl delete sparkapplication kd-py-channel
-
-kubectl apply -f ./kd-spark/kd-py-channel-kafka.yaml
-kubectl delete sparkapplication kd-py-channel-kafka
-
 #-------------------------------------------
 # Kafkacat commands
 #-------------------------------------------
@@ -165,7 +159,7 @@ mv /mosquitto/data/action.json .
 cat action.json | awk '{print $0; system("sleep 1");}' | mosquitto_pub -h kd-mosquitto -t action -l
 
 #-------------------------------------------
-# Run Connectors on Dev Kafka container (ie. on KDWeather container)
+# Demo Commands - Run Connectors on Dev Kafka container (ie. on KDWeather container)
 #-------------------------------------------
 # Install Datagen connector
 confluent-hub install --no-prompt confluentinc/kafka-connect-datagen:0.4.0
@@ -221,6 +215,23 @@ curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connect
 
 # Delete Weather Connector
 curl -XDELETE 'http://localhost:8083/connectors/kd-weather-01'
+
+#-------------------------------------------
+# Demo Commands - Run Scala app from kafkaint Dev Container
+#-------------------------------------------
+kubectl delete sparkapplication kd-kafkaint
+kubectl apply -f /kd-spark/kd-kafkaint.yaml
+
+#-------------------------------------------
+# Demo Commands - Run Python app from local
+#-------------------------------------------
+# To run standalone without Kafka
+kubectl apply -f ./kd-spark/kd-py-channel.yaml   
+kubectl delete sparkapplication kd-py-channel
+
+# To run with Kafka
+kubectl apply -f ./kd-spark/kd-py-channel-kafka.yaml
+kubectl delete sparkapplication kd-py-channel-kafka
 
 #-------------------------------------------
 # MISC

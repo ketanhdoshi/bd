@@ -113,10 +113,12 @@ object StatefulSession {
 object Session {
     def foo(){
         println("Hello Foo!")
-    }
+    }    
 
     def getData(
         spark: SparkSession,
+        brokers: String,
+        topic: String,
         dataDir:String
     ) : DataFrame = {    
 
@@ -128,14 +130,18 @@ object Session {
             .add("action", DataTypes.IntegerType)
             .add("action_ts", DataTypes.TimestampType)
 
-        val inputPath = dataDir + "action*.json"
-        val actionDf = spark
-            .readStream                       // `readStream` instead of `read` for creating streaming DataFrame
-            .schema(actionSchema)             // Set the schema of the JSON data
-            .option("maxFilesPerTrigger", 1)  // Treat a sequence of files as a stream by picking one file at a time
-            .json(inputPath)
-
-        return actionDf;
+        if (brokers != null) {
+          val actionDf = Util.readKafkaJson (spark, brokers, topic, actionSchema, offset=9);
+          return actionDf;
+        } else {
+          val inputPath = dataDir + "action*.json"
+          val actionDf = spark
+              .readStream                       // `readStream` instead of `read` for creating streaming DataFrame
+              .schema(actionSchema)             // Set the schema of the JSON data
+              .option("maxFilesPerTrigger", 1)  // Treat a sequence of files as a stream by picking one file at a time
+              .json(inputPath)
+          return actionDf;
+        }
     }
 
     def doStateful (spark: SparkSession, actionDf: DataFrame): DataFrame = {

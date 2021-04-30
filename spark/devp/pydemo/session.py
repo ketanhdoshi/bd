@@ -59,10 +59,15 @@ def readKafkaStream(spark, brokers, topic, offset):
           .add("user_id", IntegerType()) \
           .add("device_id", IntegerType()) \
           .add("channel_id", IntegerType()) \
-          .add("start_ts", TimestampType()) \
-          .add("end_ts", TimestampType())
+          .add("start", StringType()) \
+          .add("end", StringType())
 
   sessionDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+
+  fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  sessionDf = sessionDf.transform (partial(util.StrToTimestamp, strColName="start", tsColName="start_ts", fmt=fmt))
+  sessionDf = sessionDf.transform (partial(util.StrToTimestamp, strColName="end", tsColName="end_ts", fmt=fmt))
+
   util.showStream(sessionDf)
   return sessionDf
 
@@ -94,6 +99,7 @@ def readKafkaAction(spark, brokers, topic, offset):
           .add("action_ts", TimestampType())
 
   actionDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
+  
   util.showStream(actionDf)
   return actionDf
 

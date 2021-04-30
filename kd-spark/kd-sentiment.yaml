@@ -6,13 +6,13 @@ metadata:
 spec:
   type: Scala
   mode: cluster
-  image: "gcr.io/spark-operator/spark:v3.0.0"
+  image: "gcr.io/spark-operator/spark:v3.1.1"
   imagePullPolicy: Always
   mainClass: com.ketan.Sentiment
   mainApplicationFile: "local:///tmp/dev/sentiment/target/scala-2.12/sentiment-analysis_2.12-1.0.jar"
   arguments: 
     - "/tmp/data"
-  sparkVersion: "3.0.0"
+  sparkVersion: "3.1.1"
   restartPolicy:
     type: Never
   volumes:
@@ -37,7 +37,7 @@ spec:
     coreLimit: "1200m"
     memory: "512m"
     labels:
-      version: 3.0.0
+      version: 3.1.1
     serviceAccount: sparkop-spark
     volumeMounts:
       - name: "test-volume"
@@ -52,7 +52,7 @@ spec:
     instances: 1
     memory: "512m"
     labels:
-      version: 3.0.0
+      version: 3.1.1
     volumeMounts:
       - name: "test-volume"
         mountPath: "/tmp"

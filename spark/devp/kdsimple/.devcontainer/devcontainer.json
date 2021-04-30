@@ -32,7 +32,7 @@
 		// Mount some code folders from the dev env (containing the .yaml file to launch the Spark application)
 		//"source=/run/desktop/mnt/host/c/kd/dev/bd/volumes/spark-dev,target=/spark-dev,type=bind,consistency=cached",
 		"source=${localWorkspaceFolder}/../../data,target=/data,type=bind,consistency=cached",
-		"source=${localWorkspaceFolder}/../../../helm/kd-spark,target=/kd-spark,type=bind,consistency=cached"
+		"source=${localWorkspaceFolder}/../../../kd-spark,target=/kd-spark,type=bind,consistency=cached"
 	],
 
 	// Environment variables for the container

@@ -94,7 +94,7 @@ def doKafkaTest(spark, dataDir):
 # Create a Spark Session and process all the data sources
 #-------------------------------------------
 def main(spark, dataDir, fromKafka=False):
-  sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=0, fromKafka=fromKafka)
+  sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=10, fromKafka=fromKafka)
   channelDf = channel.doChannel(spark)
 
   # Process Shows and Ads
@@ -102,7 +102,7 @@ def main(spark, dataDir, fromKafka=False):
   adDf = ad.doAd(spark, dataDir, brokers, adTopic, offset=0, fromKafka=fromKafka)
 
   # Get user demographics and device locations
-  userDf = user.doUser(spark, dataDir, brokers, userTopic, offset=0, fromKafka=fromKafka)
+  userDf = user.doUser(spark, dataDir, brokers, userTopic, offset=3, fromKafka=fromKafka)
   deviceLocDf = device_loc.doDeviceLoc(spark, dataDir, brokers, deviceLocTopic, offset=0, fromKafka=fromKafka)
 
   # Get Show by User Sessions, enriched with Demographic and Device Location
@@ -133,8 +133,8 @@ adTopic = "testad1"
 deviceLocTopic = "testloc1"
 actionTopic = "testaction1"
 
-#main(spark, dataDir, fromKafka=True)
-sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=0, fromKafka=True)
+main(spark, dataDir, fromKafka=True)
+#sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=0, fromKafka=True)
 
 # readKafkaCustomer(spark, brokers, userTopic, offset=6)
 # ad.readKafkaStream(spark, brokers, adTopic, offset=10)
