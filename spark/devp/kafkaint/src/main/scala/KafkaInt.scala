@@ -23,13 +23,14 @@ object KafkaInt {
     val schemaRegistryUrl = args(1)
     val eventsTopic = args(2) // "demo-events"
     val dataDir = args(3) + "/"
+    val offset = args(4).toInt
 
     // Initialise Spark
     val spark: SparkSession = SparkSession.builder
       .appName("Kafka Integration")
       .getOrCreate()
 
-    new StreamsApp(spark, brokers, schemaRegistryUrl, eventsTopic, dataDir).process()
+    new StreamsApp(spark, brokers, schemaRegistryUrl, eventsTopic, dataDir, offset).process()
   }
 }
 
@@ -223,7 +224,8 @@ class StreamsApp(
   brokers: String, 
   schemaRegistryUrl: String, 
   eventsTopic: String,
-  dataDir:String) {
+  dataDir: String,
+  offset: Integer) {
 
   //-------------------------------------------
   // Define and register a UDF to calculate the elapsed time difference in seconds
@@ -536,7 +538,7 @@ class StreamsApp(
     //doStreaming()
 
     Session.foo()
-    val actionDf = Session.getData(spark, brokers, "testaction1", dataDir)
+    val actionDf = Session.getData(spark, brokers, "testaction1", dataDir, offset)
     val sessionsDf = Session.doStateful (spark, actionDf)
 
     /* For some reason neither ther output to memory nor the output to file
@@ -567,11 +569,8 @@ class StreamsApp(
           .option("checkpointLocation", outDir + "/checkpoint_session")
           .start() */
 
-    val kafkaOutputJson = Util.writeKafkaJson (brokers, "json_topic", "append", 
+    val kafkaOutputJson = Util.writeKafkaJson (brokers, "json_topic", "update", 
                                         dataDir + "checkpoints_json", sessionsDf, "user_id")
-
-    // val kafkaOutputJson = Util.writeKafkaJson (brokers, "debugAction1", "append", 
-    //                                    dataDir + "checkpoints_json", actionDf, "user_id")
 
     // Read a Kafka Avro stream and write it out to a Kafka JSON stream so that it can
     // be ingested by ElasticSearch for a Kibana dashboard
@@ -579,7 +578,7 @@ class StreamsApp(
     //val kafkaOutputESJson = Util.writeKafkaJson (brokers, "demo-es", 
     //              "append", "/data/checkpoints", dfESAvro, "event_time")
 
-    spark.streams.awaitAnyTermination(80000)
+    spark.streams.awaitAnyTermination(800000)
 
     println(s"========== DONE ==========" )
   }

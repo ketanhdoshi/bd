@@ -67,6 +67,8 @@ c:\kd\tools\helm\helm upgrade --install  connectors ./confluent-operator  --valu
 c:\kd\tools\helm\helm upgrade --install  controlcenter ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set controlcenter.enabled=true
 c:\kd\tools\helm\helm upgrade --install  ksql ./confluent-operator  --values ..\..\..\kd-confluent\kd-values.yaml --namespace kd-confluent  --set ksql.enabled=true
 
+# In Control Centre, manually increase retention of the three Connector topics (config, offsets, status) to 1 year
+
 # Set up a Kafkacat client
 cd ../../..
 kubectl apply -f ./kd-confluent/kafkacat.yaml -n kd-confluent
@@ -111,8 +113,29 @@ kubectl apply -f ./kd-spark/spark-pi.yaml
 kubectl delete sparkapplication pyspark-pi  -n spark-app
 kubectl apply -f ./kd-spark/spark-python.yaml
 
+kubectl apply -f ./kd-spark/kd-simple.yaml
+kubectl delete sparkapplication kd-simple
+
+kubectl apply -f ./kd-spark/kd-sentiment.yaml
+kubectl delete sparkapplication kd-sentiment
+
+kubectl apply -f ./kd-spark/kd-kafkaavro.yaml
+kubectl delete sparkapplication kd-kafkaavro
+
 kubectl apply -f ./kd-spark/kd-py-simple.yaml 
 kubectl delete sparkapplication kd-py-simple
+
+kubectl apply -f ./kd-spark/kd-simple.yaml
+kubectl delete sparkapplication kd-simple
+
+kubectl apply -f ./kd-spark/kd-py-nested-json.yaml
+kubectl delete sparkapplication kd-py-nested-json
+
+kubectl apply -f ./kd-spark/kd-py-iot.yaml
+kubectl delete sparkapplication kd-py-iot
+
+kubectl apply -f ./kd-spark/kd-py-kafkaint.yaml
+kubectl delete sparkapplication kd-py-kafkaint
 
 #-------------------------------------------
 # Kafkacat commands

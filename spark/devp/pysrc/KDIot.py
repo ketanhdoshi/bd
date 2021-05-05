@@ -13,11 +13,11 @@ brokers = sys.argv[1] # "kafka:29092"
 topic = sys.argv[2] # "mqtt.temperature"
 outTopic = sys.argv[3] # "kdcount"
 dataDir = sys.argv[4] + "/" # /tmp/data
+offset = int(sys.argv[5])
 
-print("args are ", len(sys.argv), sys.argv[0], brokers, topic, outTopic, dataDir)
+print("args are ", len(sys.argv), sys.argv[0], brokers, topic, outTopic, dataDir, offset)
 
 # Read from the beginning (ie. 'earliest' offset) or from a specific number offset
-offset=42
 startingOffsets = "earliest" if (offset == 0) else f"""{{ "{topic}": {{ "0": {offset} }} }}"""
 
 # Subscribe to 1 topic

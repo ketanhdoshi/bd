@@ -6,22 +6,25 @@ metadata:
 spec:
   type: Scala
   mode: cluster
-  image: "gcr.io/spark-operator/spark:v3.0.0"
+  image: "gcr.io/spark-operator/spark:v3.1.1"
   imagePullPolicy: Always
   mainClass: com.ketan.KafkaAvro
   mainApplicationFile: "local:///tmp/dev/kafkaavro/target/scala-2.12/kafka-avro_2.12-1.0.jar"
   arguments: 
     - "kafka.kd-confluent.svc.cluster.local:9071"
+    - "testAvroInp"
+    - "0"
+    - "testAvroOut"
     - "/tmp/data"
   deps:
     packages:
-      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0
-      - org.apache.spark:spark-avro_2.12:3.0.0
-  sparkVersion: "3.0.0"
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1
+      - org.apache.spark:spark-avro_2.12:3.1.1
+  sparkVersion: "3.1.1"
   sparkConf:
     # NB: No spaces between jars (after the comma), otherwise we get errors
-    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,org.apache.spark:spark-avro_2.12:3.0.0"
-    spark.jars: "local:///tmp/ivy/jars/org.apache.spark_spark-sql-kafka-0-10_2.12-3.0.0.jar,\
+    spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1,org.apache.spark:spark-avro_2.12:3.1.1"
+    spark.jars: "local:///tmp/ivy/jars/org.apache.spark_spark-sql-kafka-0-10_2.12-3.1.1.jar,\
       local:///tmp/ivy/jars/org.apache.kafka_kafka-clients-2.4.1.jar,\
       local:///tmp/ivy/jars/org.apache.commons_commons-pool2-2.6.2.jar,\
       local:///tmp/ivy/jars/org.xerial.snappy_snappy-java-1.1.7.5.jar,\
@@ -29,8 +32,8 @@ spec:
       local:///tmp/ivy/jars/org.lz4_lz4-java-1.7.1.jar,\
       local:///tmp/ivy/jars/org.slf4j_slf4j-api-1.7.30.jar,\
       local:///tmp/ivy/jars/org.spark-project.spark_unused-1.0.0.jar,\
-      local:///tmp/ivy/jars/org.apache.spark_spark-token-provider-kafka-0-10_2.12-3.0.0.jar,\
-      local:///tmp/ivy/jars/org.apache.spark_spark-avro_2.12-3.0.0.jar"
+      local:///tmp/ivy/jars/org.apache.spark_spark-token-provider-kafka-0-10_2.12-3.1.1.jar,\
+      local:///tmp/ivy/jars/org.apache.spark_spark-avro_2.12-3.1.1.jar"
     spark.jars.ivy: "/tmp/ivy"
   restartPolicy:
     type: Never
@@ -60,7 +63,7 @@ spec:
     coreLimit: "1200m"
     memory: "512m"
     labels:
-      version: 3.0.0
+      version: 3.1.1
     serviceAccount: sparkop-spark
     volumeMounts:
       - name: "test-volume"
@@ -77,7 +80,7 @@ spec:
     instances: 1
     memory: "512m"
     labels:
-      version: 3.0.0
+      version: 3.1.1
     volumeMounts:
       - name: "test-volume"
         mountPath: "/tmp"

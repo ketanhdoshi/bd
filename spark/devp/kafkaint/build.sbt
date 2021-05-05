@@ -2,7 +2,7 @@ name := "Kafka Integration"
 version := "1.0"
 scalaVersion := "2.12.12"
 
-val sparkVersion = "3.0.0"
+val sparkVersion = "3.1.1"
 
 // Add different Maven repository for Confluent libraries
 // Needed for Avro and Schema Registry integration

@@ -24,8 +24,12 @@ object KafkaAvro {
   def main(args: Array[String]): Unit = {
     //val brokers = "kafka:29092"
     val brokers = args(0)
-    val dataDir = args(1) + "/"
-    new StreamsProcessor(brokers, dataDir).process()
+    val inpTopic = args(1)
+    val inpOffset = args(2).toInt
+    val outTopic = args(3)
+    val dataDir = args(4) + "/"
+
+    new StreamsProcessor(brokers, inpTopic, inpOffset, outTopic, dataDir).process()
   }
 }
 
@@ -39,7 +43,7 @@ object KafkaAvro {
 // topic in Kafka (called 'avro_topic'), so monitor it using kafkacat
 // Finally that topic will be read and output to the console
 //-------------------------------------------
-class StreamsProcessor(brokers: String, dataDir: String) {
+class StreamsProcessor(brokers: String, inpTopic: String, inpOffset: Integer, outTopic: String, dataDir: String) {
 
 def process(): Unit = {
 
@@ -49,12 +53,13 @@ def process(): Unit = {
       .getOrCreate()
 
     // Read JSON data from a stream from Kafka
+    val startingOffsets = if (inpOffset == 0) "earliest" else s"""{"$inpTopic": {"0": $inpOffset}}"""
     val df = spark
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
-      .option("subscribe", "json_spark")
-      .option("startingOffsets", "earliest") // read data from the start of the stream
+      .option("subscribe", inpTopic)
+      .option("startingOffsets", startingOffsets)
       .option("kafka.sasl.mechanism", "PLAIN")
       .option("kafka.security.protocol", "SASL_PLAINTEXT")
       .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
@@ -90,7 +95,7 @@ def process(): Unit = {
       .format("kafka")
       .outputMode("append")
       .option("kafka.bootstrap.servers", brokers)
-      .option("topic", "avro_topic")
+      .option("topic", outTopic)
       .option("kafka.sasl.mechanism", "PLAIN")
       .option("kafka.security.protocol", "SASL_PLAINTEXT")
       .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.plain.PlainLoginModule required username="test" password="test123";""")
@@ -102,7 +107,7 @@ def process(): Unit = {
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
-      .option("subscribe", "avro_topic")
+      .option("subscribe", outTopic)
       .option("startingOffsets", "earliest") // read data from the start of the stream
       .option("kafka.sasl.mechanism", "PLAIN")
       .option("kafka.security.protocol", "SASL_PLAINTEXT")
