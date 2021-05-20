@@ -48,6 +48,9 @@ def readKafkaStream(spark, brokers, topic, offset):
   userDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
   userDf = userDf.withColumnRenamed("ID", "user_id") \
                  .withColumnRenamed("user_name", "name")
+  
+  # Use just the relevant fields
+  userDf = userDf.select ("user_id", "name", "age", "gender")
   util.showStream(userDf)
   return userDf
 

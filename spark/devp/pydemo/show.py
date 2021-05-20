@@ -10,13 +10,14 @@ from pyspark.sql.window import Window
 import util
   
 #-------------------------------------------
+# Convert the nested Channel data into a flat dataframe that has one row per Show
 #-------------------------------------------
 def flattenShows(parquetDf):
   # Explode each day of the schedule as a separate row. It creates two columns 'key' and 'value'
   explodedDf = parquetDf.select("channel", "channel_id", explode("schedule"))
   # Explode each show in the day as a separate row
   explodedDf = explodedDf.select("channel", "channel_id", col("key").alias("day"), explode("value").alias("show"))
-  explodedDf.printSchema()
+  # explodedDf.printSchema()
 
   # Select all the fields from the show. 
   # For practice, add a 'day_date' date column by converting the 'day' string column.
@@ -28,8 +29,8 @@ def flattenShows(parquetDf):
   fmt = "dd-MM-yyyy HH:mm:ss"
   flatDf = flatDf.withColumn("start_time", concat(col("day"), lit(" "), col("start")))
   flatDf = flatDf.transform (partial(util.StrToTimestamp, strColName="start_time", tsColName="start_ts", fmt=fmt))
-  flatDf.printSchema()
-  flatDf.show()
+  # flatDf.printSchema()
+  # flatDf.show()
 
   # +-------+----------+----------+-------------+----------+--------+----------+-------------------+-------------------+
   # |channel|channel_id|       day|      program|program_id|   start|  day_date|         start_time|           start_ts|
@@ -48,6 +49,9 @@ def flattenShows(parquetDf):
   return flatDf
 
 #-------------------------------------------
+# Show data only has 'start' time. The 'end' time is whenever the next show starts.
+# Convert the implicit 'end' time to an explicit 'end' time, by checking the next
+# # show on the schedule. Each Show record should now have both 'start' and 'end' times.
 #-------------------------------------------
 def getEndTime(df):
   # Create a Window Spec
@@ -65,7 +69,6 @@ def getEndTime(df):
   ndf = df.withColumn("end_tmp", lead("start_ts", 1, None).over(windowSpec))
   ndf = ndf.withColumn("end_day", to_timestamp(date_add("day_date", 1)))
   ndf = ndf.select("*", coalesce("end_tmp", "end_day").alias("end_ts"))
-  ndf.show()
 
   # +----------+-------------+----------+-------+----------+----------+-------------------+-------------------+-------------------+-------------------+
   # |program_id|      program|channel_id|channel|       day|  day_date|           start_ts|            end_tmp|            end_day|             end_ts|
@@ -80,10 +83,17 @@ def getEndTime(df):
   # +----------+-------------+----------+-------+----------+----------+-------------------+-------------------+-------------------+-------------------+
 
   # Use just the relevant fields
-  ndf = ndf.select ("program_id", "program", "channel_id", "channel", "day_date", "start_ts", "end_ts")
+  ndf = ndf.select ("channel_id", "channel", "program_id", "program", "day_date", "start_ts", "end_ts")
+  ndf.show()
   return ndf
 
 #-------------------------------------------
+# We are given a static Dataframe of Shows with start and end times, and 
+# a streaming Dataframe of user watching Sessions with start and end times.
+# The Sessions contain only the Channel watched, not the Show. Join these
+# Dataframes by checking the overlap between Show start/end times and
+# Session start/end times, to get the user watching Sessions that include
+# both Show and Channel.
 #-------------------------------------------
 def getShowOverlap(showDf, sessionDf):
   # Alternate syntax for Joins
@@ -96,19 +106,26 @@ def getShowOverlap(showDf, sessionDf):
   #       """
   #     ))
 
+  # Rename columns that have the same name in both Dataframes
   showDf = showDf.withColumnRenamed("channel_id", "show_channel_id") \
              .withColumnRenamed("start_ts", "show_start_ts") \
              .withColumnRenamed("end_ts", "show_end_ts")
   
+  # Rename columns that have the same name in both Dataframes
   sessionDf = sessionDf.withColumnRenamed("channel_id", "session_channel_id") \
                        .withColumnRenamed("start_ts", "session_start_ts") \
                        .withColumnRenamed("end_ts", "session_end_ts")
 
+  # Join the two Dataframes based on the Channel, such that the Session watching
+  # start/end times overlap with the Show start/end times. This is a static-stream
+  # join. We would like to use Left Outer join, so that Shows with no watching 
+  # Sessions also get included, but that is not supported.
   overlapDf = sessionDf.join(showDf,
     (sessionDf.session_channel_id == showDf.show_channel_id) &
     (sessionDf.session_start_ts <= showDf.show_end_ts) &
-    (sessionDf.session_end_ts >= showDf.show_start_ts), "left_outer")
+    (sessionDf.session_end_ts >= showDf.show_start_ts), "inner")
 
+  # From the overlap, compute the start and end time that the user watched each show.
   overlapDf = overlapDf.withColumn("over_start_ts", greatest(overlapDf.session_start_ts, overlapDf.show_start_ts)) \
                        .withColumn("over_end_ts", least(overlapDf.session_end_ts, overlapDf.show_end_ts))
 
@@ -125,23 +142,19 @@ def getShowOverlap(showDf, sessionDf):
   # |     45|       15|                57|2021-02-02 07:19:35|2021-02-02 07:57:35|        14| Blue Kingdom|             57|    BBC|2021-02-02|2021-02-02 07:00:00|2021-02-02 08:30:00|2021-02-02 07:19:35|2021-02-02 07:57:35|
   # +-------+---------+------------------+-------------------+-------------------+----------+-------------+---------------+-------+----------+-------------------+-------------------+-------------------+-------------------+
 
-  overlapDf.printSchema()
-  overlapStream = (overlapDf
-    .writeStream
-    .outputMode("append")
-    .option("forceDeleteTempCheckpointLocation", "true")
-    .format("console")
-    .start()
-  )
+  # overlapDf.printSchema()
 
   # Use only the relevant columns and rename them as needed
   overlapDf = overlapDf.select(
                 "program_id", "program", col("show_channel_id").alias("channel_id"), "channel",
                 "user_id", "device_id",
                 col("over_start_ts").alias("start_ts"), col("over_end_ts").alias("end_ts"))
+
+  util.showStream(overlapDf)
   return overlapDf
 
 #-------------------------------------------
+# Join the Show watching Sessions with User demographic information
 #-------------------------------------------
 def getShowDemographic (showByUserDf, userDf):
 
@@ -149,9 +162,9 @@ def getShowDemographic (showByUserDf, userDf):
   # late-arriving data can be discarded, to prevent unbounded waiting.
   # The user dataframe has no time column, so we add current time as an artificial column
   showByUserDf = showByUserDf.withWatermark("start_ts", "1 minutes")
-  userDf = userDf \
-              .withColumn("current_timestamp", current_timestamp()) \
-              .withWatermark("current_timestamp", "1 minutes")
+  # userDf = userDf \
+  #             .withColumn("current_timestamp", current_timestamp()) \
+  #             .withWatermark("current_timestamp", "1 minutes")
 
   showByUserDf = showByUserDf.withColumnRenamed("user_id", "show_user_id")
   joinDf = showByUserDf.join(userDf, (showByUserDf.show_user_id == userDf.user_id), "inner")
@@ -170,37 +183,33 @@ def getShowDemographic (showByUserDf, userDf):
   # |        12|        58|    Westworld|    HBO|     46|       16|vihaan| 18|     M|2021-02-01 07:00:35|2021-02-01 07:30:00|
   # +----------+----------+-------------+-------+-------+---------+------+---+------+-------------------+-------------------+
 
-  joinDf.printSchema()
-  joinStream = (joinDf
-    .writeStream
-    .outputMode("append")
-    .option("forceDeleteTempCheckpointLocation", "true")
-    .format("console")
-    .start()
-  )
-
+  util.showStream(joinDf)
   return joinDf
 
 #-------------------------------------------
+# Join the Show watching Sessions (including Demographic) with a streaming
+# Dataframe of Device Location information. The device might be in motion
+# and sends out location updates periodically along with a timestamp. 
+# The Sessions contain a device ID which is used to join it with the Device 
+# Location. We also must overlap the time of the location update with 
+# the start/end time of the watching Session.
 #-------------------------------------------
 def getShowDemographicLocation(showDemographicDf, deviceLocDf):
   # Comment it out for now because start_ts is a string in the Kafka intermediate.
   # But in reality it will be a timestamp, so uncomment it when we are not loading
   # the intermediate from Kafka.
-  #showDemographicDf = showDemographicDf.withWatermark("start_ts", "10 seconds")
-  showDemographicDf = showDemographicDf \
-                      .withColumn("current_timestamp", current_timestamp()) \
-                      .withWatermark("current_timestamp", "10 seconds")
-  deviceLocDf = deviceLocDf \
-              .withColumn("current_timestamp", current_timestamp()) \
-              .withWatermark("current_timestamp", "3 minutes")
+  showDemographicDf = showDemographicDf.withWatermark("start_ts", "90 seconds")
+  deviceLocDf = deviceLocDf.withWatermark("kdts", "60 seconds")
 
   showDemographicDf = showDemographicDf.withColumnRenamed("device_id", "show_device_id")
-  joinDf = showDemographicDf.join(deviceLocDf, (showDemographicDf.show_device_id == deviceLocDf.device_id), "inner")
+  joinDf = showDemographicDf.join(deviceLocDf, 
+      (showDemographicDf.show_device_id == deviceLocDf.device_id) &
+      (showDemographicDf.start_ts <= deviceLocDf.kdts) &
+      (showDemographicDf.end_ts >= deviceLocDf.kdts), "left_outer")
   joinDf = joinDf.select ("program_id", "channel_id", "program", "channel", 
                           "user_id", "name", "age", "gender", 
                           "device_id", "lon", "lat", "visibility",
-                          "start_ts", "end_ts")
+                          "start_ts", "end_ts", "kdts")
 
   # +----------+----------+-------------+-------+-------+------+---+------+---------+------+------+----------+-------------------+-------------------+
   # |program_id|channel_id|      program|channel|user_id|  name|age|gender|device_id|   lon|   lat|visibility|           start_ts|             end_ts|
@@ -244,3 +253,24 @@ def doShowDemographicLoc(showDf, sessionDf, userDf, deviceLocDf):
   showDemographicLocDf = getShowDemographicLocation(showDemographicDf, deviceLocDf)
 
   return showDemographicLocDf
+
+  # +----------+----------+-------------+-------+-------+------+---+------+---------+--------+-------+----------+-------------------+-------------------+-------------------+
+  # |program_id|channel_id|      program|channel|user_id|  name|age|gender|device_id|     lon|    lat|visibility|           start_ts|             end_ts|               kdts|
+  # +----------+----------+-------------+-------+-------+------+---+------+---------+--------+-------+----------+-------------------+-------------------+-------------------+
+  # |        12|        58|    Westworld|    HBO|     46|vihaan| 18|     M|       16| -87.125|39.5237|     10000|2021-02-01 23:55:47|2021-02-01 23:56:30|2021-02-01 23:56:02|
+  # |        13|        58| Wonder Woman|    HBO|     46|vihaan| 18|     M|       16| -87.125|39.5237|     10000|2021-02-01 23:56:30|2021-02-01 23:58:00|2021-02-01 23:57:03|
+  # |        14|        58|         Dune|    HBO|     46|vihaan| 18|     M|       16| -87.125|39.5237|     10000|2021-02-01 23:58:00|2021-02-01 23:58:19|2021-02-01 23:58:04|
+  # |        16|        57|   Wild China|    BBC|     45| ketan| 55|     M|       15|-86.0689|40.7537|     10000|2021-02-02 00:01:31|2021-02-02 00:02:52|2021-02-02 00:02:08|
+  # |        15|        58|     Avengers|    HBO|     46|vihaan| 18|     M|       17|   -64.0|  -34.0|     10000|2021-02-02 00:00:08|2021-02-02 00:01:53|2021-02-02 00:01:07|
+  # |        16|        57|   Wild China|    BBC|     46|vihaan| 18|     M|       17|   -64.0|  -34.0|     10000|2021-02-02 00:01:53|2021-02-02 00:04:00|2021-02-02 00:02:08|
+  # |        16|        57|   Wild China|    BBC|     46|vihaan| 18|     M|       17|   -64.0|  -34.0|     10000|2021-02-02 00:01:53|2021-02-02 00:04:00|2021-02-02 00:03:09|
+  # |        13|        57|Living Planet|    BBC|     45| ketan| 55|     M|       14|    -8.0|   53.0|     10000|2021-02-01 23:57:00|2021-02-01 23:58:00|2021-02-01 23:57:03|
+  # |        14|        57| Planet Earth|    BBC|     45| ketan| 55|     M|       14|    -8.0|   53.0|     10000|2021-02-01 23:58:00|2021-02-01 23:59:14|2021-02-01 23:58:04|
+  # |        14|        57| Planet Earth|    BBC|     45| ketan| 55|     M|       14|    -8.0|   53.0|     10000|2021-02-01 23:58:00|2021-02-01 23:59:14|2021-02-01 23:59:05|
+  # +----------+----------+-------------+-------+-------+------+---+------+---------+--------+-------+----------+-------------------+-------------------+-------------------+
+
+  # +----------+----------+-------------+-------+-------+-----+---+------+---------+----+----+----------+-------------------+-------------------+----+
+  # |program_id|channel_id|      program|channel|user_id| name|age|gender|device_id| lon| lat|visibility|           start_ts|             end_ts|kdts|
+  # +----------+----------+-------------+-------+-------+-----+---+------+---------+----+----+----------+-------------------+-------------------+----+
+  # |        12|        57|Animal Planet|    BBC|     45|ketan| 55|     M|     null|null|null|      null|2021-02-01 23:56:27|2021-02-01 23:57:00|null|
+  # +----------+----------+-------------+-------+-------+-----+---+------+---------+----+----+----------+-------------------+-------------------+----+

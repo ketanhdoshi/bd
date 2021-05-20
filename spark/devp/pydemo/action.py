@@ -9,6 +9,37 @@ from pyspark.sql.window import Window
 
 import util
 
+def getActionData(spark):
+  actionSchema = StructType() \
+          .add("user", StringType()) \
+          .add("user_id", IntegerType()) \
+          .add("channel_id", IntegerType()) \
+          .add("device_id", IntegerType()) \
+          .add("action", IntegerType()) \
+          .add("action_ts", TimestampType())
+
+  # A single file cannot be read as a stream. You have to read multiple files from
+  # a folder. So even though there is only one file, we have to add the wildcard
+  # to the file name ie. "action*.json"
+  inputPath = dataDir + "/action*.json"
+  actionDf = (spark
+      .readStream                 
+      .schema(actionSchema)
+      .json(inputPath)
+  )
+
+  #.option("maxFilesPerTrigger", 1)  # Treat a sequence of files as a stream by picking one file at a time
+
+  # Output stream to console
+  actionDf.printSchema()
+  actionStream = (actionDf
+    .writeStream
+    .outputMode("append")
+    .option("forceDeleteTempCheckpointLocation", "true")
+    .format("console")
+    .start()
+  )
+
 #-------------------------------------------
 #-------------------------------------------
 def getData(spark):

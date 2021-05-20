@@ -93,8 +93,8 @@ def doKafkaTest(spark, dataDir):
 #-------------------------------------------
 # Create a Spark Session and process all the data sources
 #-------------------------------------------
-def main(spark, dataDir, fromKafka=False):
-  sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=10, fromKafka=fromKafka)
+def main(spark, dataDir, fromKafka=False, toKafka=False):
+  sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=0, fromKafka=fromKafka)
   channelDf = channel.doChannel(spark)
 
   # Process Shows and Ads
@@ -102,8 +102,8 @@ def main(spark, dataDir, fromKafka=False):
   adDf = ad.doAd(spark, dataDir, brokers, adTopic, offset=0, fromKafka=fromKafka)
 
   # Get user demographics and device locations
-  userDf = user.doUser(spark, dataDir, brokers, userTopic, offset=3, fromKafka=fromKafka)
-  deviceLocDf = device_loc.doDeviceLoc(spark, dataDir, brokers, deviceLocTopic, offset=0, fromKafka=fromKafka)
+  userDf = user.doUser(spark, dataDir, brokers, userTopic, offset=0, fromKafka=fromKafka)
+  deviceLocDf = device_loc.doDeviceLoc(spark, dataDir, brokers, deviceLocTopic, offset=10, fromKafka=fromKafka)
 
   # Get Show by User Sessions, enriched with Demographic and Device Location
   showDemographicLocDf = show.doShowDemographicLoc(showDf, sessionDf, userDf, deviceLocDf)
@@ -113,11 +113,18 @@ def main(spark, dataDir, fromKafka=False):
   adDemographicLocDf = ad.doAdDemographicLoc(adDf, sessionDf, userDf, deviceLocDf)
   util.showStream(adDemographicLocDf)
 
-  # Save intermediate state to Kafka as a shortcut for use by downstream processing
-  # saveShowDemographicKafka (showDemographicDf, dataDir)
-  # saveAdDemographicKafka (adDemographicDf, dataDir)
-  #showDemographicDf = loadShowDemographicKafka()
-  #util.showStream(showDemographicDf)
+  if (toKafka):
+    util.writeKafkaJson(brokers, showOutTopic, showDemographicLocDf, None, dataDir + "/checkpoint_show")
+    util.writeKafkaJson(brokers, adOutTopic, adDemographicLocDf, None, dataDir + "/checkpoint_ad")
+
+  # Obsolete
+  if (False):
+    # Save intermediate state to Kafka as a shortcut for use by downstream processing
+    # saveShowDemographicKafka (showDemographicDf, dataDir)
+    # saveAdDemographicKafka (adDemographicDf, dataDir)
+    #showDemographicDf = loadShowDemographicKafka()
+    #util.showStream(showDemographicDf)
+    pass
 
 spark = SparkSession.builder.appName("KD Demo").getOrCreate()
 # Turn off INFO and DEBUG logging
@@ -133,13 +140,17 @@ adTopic = "testad1"
 deviceLocTopic = "testloc1"
 actionTopic = "testaction1"
 
-main(spark, dataDir, fromKafka=True)
-#sessionDf = session.doSession(spark, dataDir, brokers, sessionTopic, offset=0, fromKafka=True)
+showOutTopic = "testShowOut1"
+adOutTopic = "testAdOut1"
 
-# readKafkaCustomer(spark, brokers, userTopic, offset=6)
-# ad.readKafkaStream(spark, brokers, adTopic, offset=10)
-# device_loc.readKafkaStream(spark, brokers, deviceLocTopic, offset=20)
-# readKafkaAction(spark, brokers, actionTopic, offset=1)
+main(spark, dataDir, fromKafka=True, toKafka=True)
 
 spark.streams.awaitAnyTermination(900000)
 print("========== DONE ==========" )
+
+
+# --- Notes
+# Session stateful should be event time based (not processing time based)
+# Reorder the Action data so that it is sorted by time. That will ensure even Sessions are sorted by time.
+# Reduce the frequency of Location updates to 30 seconds in the Custom connector config??
+# If there are multiple locations for a single Show, take the average location

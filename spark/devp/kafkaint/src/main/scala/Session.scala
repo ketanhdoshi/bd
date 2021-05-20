@@ -217,6 +217,16 @@ object Session {
               .json(inputPath)
           return actionDf;
         }
+
+        // {"user": "ketan", "user_id": 45, "channel_id": 57, "device_id": 14, "action": 1, "action_ts": 1612223787}
+        // {"user": "ketan", "user_id": 45, "channel_id": 57, "device_id": 14, "action": 2, "action_ts": 1612223954}
+        // {"user": "ketan", "user_id": 45, "channel_id": 57, "device_id": 15, "action": 1, "action_ts": 1612224091}
+        // {"user": "ketan", "user_id": 45, "channel_id": 57, "device_id": 15, "action": 2, "action_ts": 1612224172}
+        // {"user": "vihaan", "user_id": 46, "channel_id": 58, "device_id": 16, "action": 1, "action_ts": 1612223747}
+        // {"user": "vihaan", "user_id": 46, "channel_id": 58, "device_id": 16, "action": 2, "action_ts": 1612223899}
+        // {"user": "vihaan", "user_id": 46, "channel_id": 58, "device_id": 17, "action": 1, "action_ts": 1612224008}
+        // {"user": "vihaan", "user_id": 46, "channel_id": 57, "device_id": 17, "action": 3, "action_ts": 1612224113}
+        // {"user": "vihaan", "user_id": 46, "channel_id": 57, "device_id": 17, "action": 2, "action_ts": 1612224252}
     }
 
     //-------------------------------------------
@@ -226,12 +236,32 @@ object Session {
     def doStateful (spark: SparkSession, actionDf: DataFrame): DataFrame = {
         import spark.implicits._
 
+        // +------+-------+----------+---------+------+-------------------+
+        // |  user|user_id|channel_id|device_id|action|          action_ts|
+        // +------+-------+----------+---------+------+-------------------+
+        // | ketan|     45|        57|       14|     1|2021-02-01 23:56:27|
+        // | ketan|     45|        57|       14|     2|2021-02-01 23:59:14|
+        // | ketan|     45|        57|       15|     1|2021-02-02 00:01:31|
+        // | ketan|     45|        57|       15|     2|2021-02-02 00:02:52|
+        // |vihaan|     46|        58|       16|     1|2021-02-01 23:55:47|
+        // |vihaan|     46|        58|       16|     2|2021-02-01 23:58:19|
+        // |vihaan|     46|        58|       17|     1|2021-02-02 00:00:08|
+        // |vihaan|     46|        57|       17|     3|2021-02-02 00:01:53|
+        // |vihaan|     46|        57|       17|     2|2021-02-02 00:04:12|
+        // +------+-------+----------+---------+------+-------------------+
+
         val dfState = actionDf.select ("user_id", "device_id", "channel_id", "action", "action_ts").as[DeviceAction]
             //.withWatermark("event_ts", "30 minutes")  // required for Event Time Timeouts
             .groupByKey((x:DeviceAction) => x.user_id.toString + "." + x.device_id.toString) // group based on user, device
             // Stateful processing to map from user actions to user sessions
             .flatMapGroupsWithState(OutputMode.Update,GroupStateTimeout.ProcessingTimeTimeout)(StatefulSession.flatmapSession)
             .toDF // cast the Dataset to a Dataframe
+
+        // {"user_id":45,"device_id":14,"channel_id":57,"start":"2021-02-01T23:56:27.000Z","end":"2021-02-01T23:59:14.000Z"}
+        // {"user_id":45,"device_id":15,"channel_id":57,"start":"2021-02-02T00:01:31.000Z","end":"2021-02-02T00:02:52.000Z"}
+        // {"user_id":46,"device_id":16,"channel_id":58,"start":"2021-02-01T23:55:47.000Z","end":"2021-02-01T23:58:19.000Z"}
+        // {"user_id":46,"device_id":17,"channel_id":58,"start":"2021-02-02T00:00:08.000Z","end":"2021-02-02T00:01:53.000Z"}
+        // {"user_id":46,"device_id":17,"channel_id":57,"start":"2021-02-02T00:01:53.000Z","end":"2021-02-02T00:04:12.000Z"}
 
         return dfState
     }

@@ -36,24 +36,34 @@ def getData(spark):
           {
             "program": "Animal Planet",
             "program_id": 12,
-            "start": "07:00:00"
+            "start": "23:55:00"
           },
           {
             "program": "Living Planet",
             "program_id": 13,
-            "start": "07:45:00"
+            "start": "23:57:00"
+          },
+          {
+            "program": "Planet Earth",
+            "program_id": 14,
+            "start": "23:58:00"
           }
         ],
 		    "02-02-2021": [
           {
             "program": "Blue Kingdom",
-            "program_id": 14,
-            "start": "07:00:00"
+            "program_id": 15,
+            "start": "00:00:00"
           },
           {
             "program": "Wild China",
-            "program_id": 15,
-            "start": "08:30:00"
+            "program_id": 16,
+            "start": "00:01:00"
+          },
+          {
+            "program": "Wild Africa",
+            "program_id": 17,
+            "start": "00:04:00"
           }
         ]
       }
@@ -66,17 +76,24 @@ def getData(spark):
           {
             "program": "Westworld",
             "program_id": 12,
-            "start": "07:00:00"
+            "start": "23:55:00"
           },
           {
             "program": "Wonder Woman",
             "program_id": 13,
-            "start": "07:30:00"
+            "start": "23:56:30"
           },
           {
             "program": "Dune",
             "program_id": 14,
-            "start": "09:10:00"
+            "start": "23:58:00"
+          }
+        ],
+        "02-02-2021": [
+          {
+            "program": "Avengers",
+            "program_id": 15,
+            "start": "00:00:00"
           }
         ]
       }
@@ -84,8 +101,8 @@ def getData(spark):
   ]"""
 
   channelJsonDf = util.jsonToDataFrame(spark, channelJson, channelSchema)
-  channelJsonDf.printSchema()
-  channelJsonDf.show()
+  # channelJsonDf.printSchema()
+  # channelJsonDf.show()
 
   # root
   # |-- channel: string (nullable = true)
@@ -118,7 +135,7 @@ def getParquet(spark, jsonDf, dataDir):
   # Parquet files are self-describing so the schema is preserved.
   # The result of loading a parquet file is also a DataFrame.
   channelDf = spark.read.parquet(parquetFile)
-  channelDf.show()
+  # channelDf.show()
 
   return channelDf
 

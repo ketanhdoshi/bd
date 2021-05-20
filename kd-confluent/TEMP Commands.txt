@@ -240,21 +240,22 @@ curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connect
 curl -XDELETE 'http://localhost:8083/connectors/kd-weather-01'
 
 #-------------------------------------------
-# Demo Commands - Run Scala app from kafkaint Dev Container
+# Demo Commands - Run Scala app from local. 
+# Can also run from kafkaint Dev Container (change ./kd-spark to /kd-spark)
 #-------------------------------------------
 kubectl delete sparkapplication kd-kafkaint
-kubectl apply -f /kd-spark/kd-kafkaint.yaml
+kubectl apply -f ./kd-spark/kd-kafkaint.yaml
 
 #-------------------------------------------
 # Demo Commands - Run Python app from local
 #-------------------------------------------
 # To run standalone without Kafka
-kubectl apply -f ./kd-spark/kd-py-channel.yaml   
-kubectl delete sparkapplication kd-py-channel
+kubectl apply -f ./kd-spark/kd-py-demo.yaml   
+kubectl delete sparkapplication kd-py-demo
 
 # To run with Kafka
-kubectl apply -f ./kd-spark/kd-py-channel-kafka.yaml
-kubectl delete sparkapplication kd-py-channel-kafka
+kubectl apply -f ./kd-spark/kd-py-demo-kafka.yaml
+kubectl delete sparkapplication kd-py-demo-kafka
 
 #-------------------------------------------
 # MISC

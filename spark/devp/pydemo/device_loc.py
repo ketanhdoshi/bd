@@ -45,6 +45,18 @@ def processData(deviceLocDf):
   # The windowing aggregation only closes its window and outputs results when it receives
   # the next batch of data. So we keep several "device_loc*.json" files in the folder.
   deviceLocDf = deviceLocDf \
+                  .select("device_id", "location", "visibility", "lon", "lat") \
+                  .groupBy("device_id", "location") \
+                  .agg(avg("lon").alias("lon"), \
+                       avg("lat").alias("lat"), \
+                       max("visibility").alias("visibility")) \
+                  .select("device_id", "location", "lon", "lat", "visibility")
+  return deviceLocDf
+
+def oldprocessData(deviceLocDf):
+  # The windowing aggregation only closes its window and outputs results when it receives
+  # the next batch of data. So we keep several "device_loc*.json" files in the folder.
+  deviceLocDf = deviceLocDf \
                   .select("device_id", "location", "visibility", "coord.*") \
                   .withColumn("timestamp", current_timestamp()) \
                   .withWatermark("timestamp", "5 seconds") \
@@ -82,12 +94,47 @@ def readKafkaStream(spark, brokers, topic, offset):
   jsonKeySchema = StructType() \
           .add("id", IntegerType())
 
+  # {"id":2963597}#{"lon":-8.0,"lat":53.0,"visibility":10000,"name":"Ireland","kdct":"2021/05/06 06:16:43"}
+  # {"id":4924733}#{"lon":-86.0689,"lat":40.7537,"visibility":10000,"name":"Peru","kdct":"2021/05/06 06:16:44"}
+  # {"id":4254884}#{"lon":-87.125,"lat":39.5237,"visibility":10000,"name":"Brazil","kdct":"2021/05/06 06:16:44"}
+  # {"id":3865483}#{"lon":-64.0,"lat":-34.0,"visibility":10000,"name":"Argentina","kdct":"2021/05/06 06:16:44"}
+  # {"id":3895114}#{"lon":-71.0,"lat":-30.0,"visibility":10000,"name":"Chile","kdct":"2021/05/06 06:16:44"}
+  # {"id":2963597}#{"lon":-8.0,"lat":53.0,"visibility":10000,"name":"Ireland","kdct":"2021/05/06 06:17:45"}
+  # {"id":4924733}#{"lon":-86.0689,"lat":40.7537,"visibility":10000,"name":"Peru","kdct":"2021/05/06 06:17:45"}
+  # {"id":4254884}#{"lon":-87.125,"lat":39.5237,"visibility":10000,"name":"Brazil","kdct":"2021/05/06 06:17:45"}
+  # {"id":3865483}#{"lon":-64.0,"lat":-34.0,"visibility":10000,"name":"Argentina","kdct":"2021/05/06 06:17:45"}
+  # {"id":3895114}#{"lon":-71.0,"lat":-30.0,"visibility":10000,"name":"Chile","kdct":"2021/05/06 06:17:45"}
+
   deviceLocDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset, jsonKeySchema=jsonKeySchema)
   deviceLocDf = deviceLocDf.withColumnRenamed("id", "device_id") \
                            .withColumnRenamed("name", "location")
   fmt = "yyyy/MM/dd HH:mm:ss"
-  deviceLocDf = deviceLocDf.transform (partial(util.StrToTimestamp, strColName="kdct", tsColName="kdts", fmt=fmt))
+  deviceLocDf = deviceLocDf.transform (partial(util.StrToTimestamp, strColName="kdct", tsColName="kdctts", fmt=fmt)) \
+                      .withColumn("kdctmin", lit("2021/05/18 10:30:12")) \
+                      .withColumn("kdbeg", lit("2021/02/01 23:55:00")) \
+                      .withColumn("kdts", to_timestamp(col("kdbeg"), fmt) + (col("kdctts") - to_timestamp(col("kdctmin"), fmt)))
 
+  # Map the device_id values to simpler values that are used in the rest of the data
+  deviceDict = {2963597: 14, 4924733: 15, 4254884: 16, 3865483: 17, 3895114: 18}
+  deviceLocDf = deviceLocDf.na.replace(deviceDict)
+
+  # +---------+-------------------+-------+--------+----------+
+  # |device_id|               kdts|    lat|     lon|visibility|
+  # +---------+-------------------+-------+--------+----------+
+  # |       14|2021-05-06 06:16:43|   53.0|    -8.0|     10000|
+  # |       15|2021-05-06 06:16:44|40.7537|-86.0689|     10000|
+  # |       16|2021-05-06 06:16:44|39.5237| -87.125|     10000|
+  # |       17|2021-05-06 06:16:44|  -34.0|   -64.0|     10000|
+  # |       18|2021-05-06 06:16:44|  -30.0|   -71.0|     10000|
+  # |       14|2021-05-06 06:17:45|   53.0|    -8.0|     10000|
+  # |       15|2021-05-06 06:17:45|40.7537|-86.0689|     10000|
+  # |       16|2021-05-06 06:17:45|39.5237| -87.125|     10000|
+  # |       17|2021-05-06 06:17:45|  -34.0|   -64.0|     10000|
+  # |       18|2021-05-06 06:17:45|  -30.0|   -71.0|     10000|
+  # +---------+-------------------+-------+--------+----------+
+
+  # Use just the relevant fields
+  deviceLocDf = deviceLocDf.select ("device_id", "kdts", "lat", "lon", "visibility")
   util.showStream(deviceLocDf)
   return deviceLocDf
 

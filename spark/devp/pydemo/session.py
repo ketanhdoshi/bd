@@ -62,12 +62,20 @@ def readKafkaStream(spark, brokers, topic, offset):
           .add("start", StringType()) \
           .add("end", StringType())
 
+  # {"user_id":45,"device_id":15,"channel_id":57,"start":"2021-02-02T07:19:35.000Z","end":"2021-02-02T07:57:35.000Z"}
+  # {"user_id":45,"device_id":14,"channel_id":57,"start":"2021-02-01T07:12:35.000Z","end":"2021-02-01T08:19:35.000Z"}
+  # {"user_id":46,"device_id":16,"channel_id":58,"start":"2021-02-01T07:00:35.000Z","end":"2021-02-01T09:05:17.000Z"}
+  # {"user_id":46,"device_id":17,"channel_id":58,"start":"2021-02-01T08:32:51.000Z","end":"2021-02-01T09:20:16.000Z"}
+  # {"user_id":46,"device_id":17,"channel_id":57,"start":"2021-02-01T09:20:16.000Z","end":"2021-02-01T09:36:56.000Z"}
+
   sessionDf = util.readKafkaJson(spark, brokers, topic, schema, offset=offset)
 
   fmt = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
   sessionDf = sessionDf.transform (partial(util.StrToTimestamp, strColName="start", tsColName="start_ts", fmt=fmt))
   sessionDf = sessionDf.transform (partial(util.StrToTimestamp, strColName="end", tsColName="end_ts", fmt=fmt))
 
+  # Use just the relevant fields
+  sessionDf = sessionDf.select ("user_id", "device_id", "channel_id", "start_ts", "end_ts")
   util.showStream(sessionDf)
   return sessionDf
 

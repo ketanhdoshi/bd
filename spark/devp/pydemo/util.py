@@ -108,7 +108,7 @@ def readKafkaJson(spark, brokers, topic, schema, offset=0, jsonKeySchema=None):
     # Flatten it out so that those columns now appear at the top-level
     df = df.selectExpr("data.*", "msgoffset", "msgtime")
 
-  df.printSchema()
+  # df.printSchema()
   return df
 
 #-------------------------------------------
@@ -141,7 +141,7 @@ def writeKafkaJson(brokers, topic, df, keyField, checkpointDir):
 # Read a JSON string into a DataFrame based on a provided schema
 #-------------------------------------------
 def jsonToDataFrame(spark, jsonStr, schema=None):
-  print ("+++++++++++++++", jsonStr)
+  # print ("+++++++++++++++", jsonStr)
   sc = spark.sparkContext
   df = spark.read.schema(schema).json(sc.parallelize([jsonStr]))
   return df
