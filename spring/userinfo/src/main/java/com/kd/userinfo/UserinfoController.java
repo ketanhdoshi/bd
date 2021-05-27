@@ -16,6 +16,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+// ------------------------------------------
+// Reactive REST Controller supports Create and Get API operations for Userinfo object
+// ------------------------------------------
+
 @RestController
 @RequestMapping("/api/users")
 public class UserinfoController {
@@ -26,6 +30,7 @@ public class UserinfoController {
 	@Autowired
 	protected UserinfoRepository userinfoRepository;
 
+	// Inject the Password Encoder
 	@Autowired
 	private PasswordEncoder bcryptEncoder;
 
@@ -38,14 +43,10 @@ public class UserinfoController {
 	@PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono createUser (@Valid @RequestBody Userinfo user) {
+		// Request body contains the JSON data that gets deserialised into a User Info object.
 
 		// Encrypt the user's password before saving
 		user.setPassword(bcryptEncoder.encode(user.getPassword()));
-
-		// DAOUser newUser = new DAOUser();
-		// newUser.setUsername(user.getUsername());
-		// newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
-		// newUser.setRole(user.getRole());
 
         return userinfoRepository.save(user);
     }
@@ -58,6 +59,8 @@ public class UserinfoController {
 	 */
 	@GetMapping("/{username}")
 	public Mono<Userinfo> byUsername(@PathVariable("username") String username) {
+		// The URL request path contains the username
+
 		logger.info("user-service byUsername() called: " + username);
 		return userinfoRepository.findByUsername(username);
 	}

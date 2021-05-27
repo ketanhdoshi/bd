@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// This is essentially the 'Login Service'
-// Clients can 'login' by POSTing username/password to the /authenticate URL. Here we use 
+// ------------------------------------------
+// REST API Clients can 'login' by POSTing username/password to the /authenticate URL. Here we use 
 // those credentials to authenticate the user and generate a JWT token which is returned 
 // in the response header.
+// ------------------------------------------
 @RestController
 public class AuthenticationController {
 
@@ -34,6 +35,10 @@ public class AuthenticationController {
 	@Autowired
 	private JwtUtil jwtTokenUtil;
 
+   	// ------------------------------------------
+    // POST Endpoint for REST API clients. The username and password are passed in the JSON body
+	// of the HTTP request
+    // ------------------------------------------
 	@PostMapping("/authenticate")
 	public ResponseEntity<String> createAuthenticationToken(@RequestBody AuthRequest request)
 			throws Exception {
@@ -51,9 +56,12 @@ public class AuthenticationController {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
 
+		// We reach here if we're successfully authenticated. Get the username and user roles
+		// from the Authentication object
 		String username = auth.getName();
 		Collection<? extends GrantedAuthority> roles = auth.getAuthorities();
 
+		// Create the token using the username and roles
 		final String token = jwtTokenUtil.createToken (roles, username);
 		
 		logger.info("createAuthenticationToken: " + username);

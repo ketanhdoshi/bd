@@ -28,14 +28,23 @@ import com.kd.kdspring.account.Account;
 // Figure out how to do a more advanced example with Authorization and Grant Authority etc.
 // Make some better example out of the logic in the /kdtok and /oauthInfo methods below.
 // Get rid of kdoauth folder
+// Move the home, bootstrap, oauthInfo etc URLs into a separate controller
 
 // ------------------------------------------
+// Front-end controller for handling Account Web UI URLs for CRUD operations. Calls the 
+// Front-end Service for Account, which then calls the back-end Account Microservice.
+//
 // This is the Controller for the microservices web frontend UI. All end-user calls
 // come here and the don't access the microservices directly. This Controller displays the 
 // web pages, and in turn makes calls to the backend microservices to fetch data.
+// 
+// All the CRUD methods here have the Authentication object for the currently authenticated user 
+// automatically injected into them. They use that to obtain the user's JWT Token credentials, so 
+// we can pass it to the backend microservice.
 // ------------------------------------------
 @Controller
 public class WebAccountController {
+    // Inject the Front-end Service for Account.
     @Autowired
     protected WebAccountService accountService;
 
@@ -110,12 +119,10 @@ public class WebAccountController {
     public String getAllAccounts(Authentication auth, Model model) {
         String token = auth.getCredentials().toString();
 
-        // Fetch all backend account
+        // Call the front-end Account Service object which then calls the backend Account 
+        // microservice to fetch all backend accounts
         List<Account> accounts = accountService.findAll(token);
         logger.info("Found all accounts" + accounts);
-
-        // String retValue = accountService.getHome().getBody();
-        // model.addAttribute("appName", retValue);
 
         model.addAttribute("appName", accounts);
         return "home";
@@ -136,16 +143,20 @@ public class WebAccountController {
 
     // ------------------------------------------
     // Handle the submit of the Account Create form. 
-    // !!!!!!! Right now, it only receives submitted data but doesn't do anything with it
     // The view populates an Account ModelAttribute object with user-inputted values from 
     // all the fields on the form
     // ------------------------------------------
     @PostMapping("/accounts")
     public String createAccount(Authentication auth, @ModelAttribute Account account, Model model) {
+        // The JSON data from the HTTP request has been deserialised into a ModelAttribute Account object.
+
+        // Get user's JWT Token credentials from the injected Authentication object, so we can pass 
+        // it to the backend microservice
         String token = auth.getCredentials().toString();
         logger.info("web-service createAccount() invoked: " + account.getNumber() + account.getBalance());
 
-        // Create backend account
+        // Call the front-end Account Service object which then calls the backend Account 
+        // microservice to create backend account
         account = accountService.create(token, account);
         logger.info("Created account: " + account);
 
@@ -159,6 +170,10 @@ public class WebAccountController {
     // ------------------------------------------
     @GetMapping("/accounts/{accountNumber}")
     public String getAccount(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        // The URL request path contains the account number
+
+        // Get user's JWT Token credentials from the injected Authentication object, so we can pass 
+        // it to the backend microservice
         String token = auth.getCredentials().toString();
         
         // Use the number to get the account. It also gets added to the model
@@ -173,7 +188,12 @@ public class WebAccountController {
     // ------------------------------------------
     @GetMapping("/accounts/{accountNumber}/edit")
     public String editForm(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        // The URL request path contains the account number
+
+        // Get user's JWT Token credentials from the injected Authentication object, so we can pass 
+        // it to the backend microservice
         String token = auth.getCredentials().toString();
+
         // Use the number to get the account. It also gets added to the model
         Account account = byNumber(token, model, accountNumber);
 
@@ -188,10 +208,18 @@ public class WebAccountController {
     // ------------------------------------------
     @PostMapping("/accounts/{accountNumber}")
     public String updateAccount(Authentication auth, @ModelAttribute Account updateAccount, Model model, @PathVariable("accountNumber") String accountNumber) {
+        // The JSON data from the HTTP request has been deserialised into a ModelAttribute Account object.
+        // The URL request path contains the account number
+
+        // Get user's JWT Token credentials from the injected Authentication object, so we can pass 
+        // it to the backend microservice
         String token = auth.getCredentials().toString();
+
+        // Use the number to get the account. It also gets added to the model
         Account account = byNumber(token, model, accountNumber);
 
-        // Update backend account
+        // Call the front-end Account Service object which then calls the backend Account 
+        // microservice to update the backend account
         account = accountService.update(token, updateAccount, accountNumber);
         logger.info("Updated account: " + account);
 
@@ -205,10 +233,16 @@ public class WebAccountController {
     // ------------------------------------------
     @DeleteMapping("/accounts/{accountNumber}")
     public String deleteAccount(Authentication auth, Model model, @PathVariable("accountNumber") String accountNumber) {
+        // The URL request path contains the account number
+
+        // Get user's JWT Token credentials from the injected Authentication object, so we can pass 
+        // it to the backend microservice
         String token = auth.getCredentials().toString();
+
         Account account = byNumber(token, model, accountNumber);
 
-        // Delete backend account
+        // Call the front-end Account Service object which then calls the backend Account 
+        // microservice to delete the backend account
         Boolean status = accountService.delete(token, accountNumber);
         String msg = "Delete account: " + (status ? "successful" : "unsuccessful");
         logger.info(msg);
@@ -219,9 +253,9 @@ public class WebAccountController {
     }
 
     // ------------------------------------------
-    // Utility method to fetch an account from the backend microservice, given 
-    // its account number. The returned Account object is added to the Model that
-    // gets attached to the view
+    // Utility method to use the account number to fetch an account from the Account Service
+    // which calls the backend microservice, . The returned Account object is added to the 
+    // Model that gets attached to the view
     // ------------------------------------------
     private Account byNumber(String token, Model model, String accountNumber) {
         logger.info("web-service byNumber() invoked: " + accountNumber);

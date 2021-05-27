@@ -7,6 +7,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.data.relational.core.mapping.Column;
 
+// ------------------------------------------
+// Model class for User Info object
+// ------------------------------------------
+
 // @Data, from Lombok generates boilerplate code for getters/setters that is normally 
 // needed with POJOs
 @Data

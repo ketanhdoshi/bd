@@ -3,9 +3,13 @@ package com.kd.account;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
+// ------------------------------------------
+// Reactive Repository for Account DB
+// ------------------------------------------
 
 // This interface will be Auto-Implemented by Spring into a Bean called accountRepository
+// The CRUD methods are inherited automatically. Here we simply define the Query methods
+// for which we want implementations auto-generated.
 public interface AccountRepository extends ReactiveCrudRepository<Account, Long> {
     /**
 	 * Find an account with the specified account number.

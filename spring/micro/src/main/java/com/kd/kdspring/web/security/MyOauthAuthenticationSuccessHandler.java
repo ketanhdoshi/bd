@@ -13,7 +13,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.http.HttpHeaders;
+
+// ------------------------------------------
+// Web UI Clients use Oauth login. After the user is successfully authenticated, we can get the
+// identity of the user (but not their credentials). Here we use the user name and roles to
+// generate a JWT token which is returned in the HTTP Response as a Cookie.
+// ------------------------------------------
 
 @Component
 public class MyOauthAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -22,14 +29,23 @@ public class MyOauthAuthenticationSuccessHandler extends SimpleUrlAuthentication
 	@Autowired
     private JwtUtil jwtTokenUtil;
 
+	@Autowired
+	MyUserDetailsService userDetailsService;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication auth) throws IOException, ServletException {
         if (response.isCommitted()) {
             return;
         }
 
+        // Username and Roles that were returned by Oauth. But we don't make use of the Roles.
         String username = auth.getName();
-        Collection<? extends GrantedAuthority> roles = auth.getAuthorities();
+        Collection<? extends GrantedAuthority> oauthRoles = auth.getAuthorities();
+
+        // Fetch the Role information from the User Service's database
+		UserDetails userDetails = userDetailsService.loadOauthUserByUsername(username);
+        Collection<? extends GrantedAuthority> roles = userDetails.getAuthorities();
+		logger.info("Oauth: " + username + roles);
 
         final String token = jwtTokenUtil.createToken (roles, username);
 

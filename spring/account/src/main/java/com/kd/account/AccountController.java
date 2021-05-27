@@ -17,12 +17,18 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+// ------------------------------------------
+// Reactive REST Controller supports all the CRUD API operations for Account object
+// ------------------------------------------
+
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountController {
 
 	protected Logger logger = Logger.getLogger(AccountController.class.getName());
 	
+	// Inject the Reactive Persistent Repository for Account. Provides all the CRUD and Query operations for
+	// the database out of the box.
 	@Autowired
 	protected AccountRepository accountRepository;
 
@@ -34,6 +40,7 @@ public class AccountController {
 	 */
 	@GetMapping("/{accountNumber}")
 	public Mono<Account> byNumber(@PathVariable("accountNumber") String accountNumber) {
+		// The URL request path contains the account number
 
 		logger.info("accounts-service byNumber: " + accountNumber);
 		return accountRepository.findByNumber(accountNumber);
@@ -58,7 +65,9 @@ public class AccountController {
 	 */
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Mono create(@RequestBody Account account) {
+	public Mono<Account> create(@RequestBody Account account) {
+		// Request body contains the JSON data that gets deserialised into an Account object.
+		
 		logger.info("accounts-service create: " + account);
 	 	return accountRepository.save(account);
 	}
@@ -71,6 +80,10 @@ public class AccountController {
 	 */
 	@PutMapping("/{accountNumber}")
 	public  Mono<ResponseEntity<Account>> updatebyNumber(@RequestBody Account account, @PathVariable("accountNumber") String accountNumber) {
+		// Request body contains the JSON data that gets deserialised into an Account object.
+		// The URL request path contains the account number
+
+		// Find the account to be updated and modify it using values from the incoming request
 		 Mono<Account> updatedAccount = accountRepository.findByNumber(accountNumber)
 		 	.flatMap(dbAccount -> {
 				dbAccount.setOwner(account.getOwner());
@@ -78,6 +91,7 @@ public class AccountController {
 				return accountRepository.save(dbAccount);
 			});
 	
+		// Return the updated account in the response if successful. Else return HTTP error
 		return updatedAccount
 			.map(acct -> ResponseEntity.ok(acct))
             .defaultIfEmpty(ResponseEntity.badRequest().build());
@@ -91,10 +105,14 @@ public class AccountController {
 	 */
 	@DeleteMapping("/{accountNumber}")
     public Mono<ResponseEntity<Void>> deleteByNumber(@PathVariable("accountNumber") String accountNumber){
+		// The URL request path contains the account number
+
+		// Find the account to be deleted and delete it. Then return the deleted account.
 		Mono<Account> deletedAccount = accountRepository.findByNumber(accountNumber)
 			.flatMap(dbAccount -> accountRepository.delete(dbAccount)
 				.then(Mono.just(dbAccount)));
 
+		// Return the deleted account in the response if successful. Else return HTTP error
 		return deletedAccount
             .map(r -> ResponseEntity.ok().<Void>build())
             .defaultIfEmpty(ResponseEntity.notFound().build());

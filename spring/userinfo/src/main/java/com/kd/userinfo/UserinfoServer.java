@@ -8,6 +8,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.context.annotation.Bean;
 
+// ------------------------------------------
+// User Info Microservice
+//
+// Is called by the front-end web service when doing Authentication, to fetch 
+// user information from the SQL database.
+// Is fully Reactive and makes Reactive calls to the SQL database
+// ------------------------------------------
+
 // Disable Reactive Webflux load balancer auto configuration
 @SpringBootApplication (exclude = {
     org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerBeanPostProcessorAutoConfiguration.class,
@@ -19,7 +27,6 @@ public class UserinfoServer {
     public static void main(String[] args) {
         // Will configure using user-server.yml
         System.setProperty("spring.config.name", "userinfo-server");
-
         SpringApplication.run(UserinfoServer.class, args);
     }
 

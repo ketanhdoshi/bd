@@ -53,4 +53,5 @@ spring/*/target/
 spring/*/.settings/
 spring/*/.classpath
 spring/*/.project
+spring/*/.factorypath
 

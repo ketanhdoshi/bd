@@ -3,13 +3,14 @@ package com.kd.kdspring;
 import com.kd.kdspring.web.WebServer;
 import com.kd.kdspring.legacy.LegacyApplication;
 
-// This is the Main class for the entire application. It acts as a
-// central Launcher to start off all the microservices as separate processes.
+// ------------------------------------------
+// This is the Main class for the Web Server and the Legacy application. It acts as a
+// Launcher to start these off as separate processes.
 // It doesn't do much else, all of the real logic resides within each microservice.
 //
 // You run the jar file multiple times, with this as the main class. Each
-// time you pass a different parameter for which microservice you want to
-// start.
+// time you pass a different parameter for which server you want to start.
+// ------------------------------------------
 public class Main {
     public static void main(String[] args) {
  

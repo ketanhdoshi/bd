@@ -1,5 +1,16 @@
 package com.kd.registration;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringApplication;
+import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
+
+// ------------------------------------------
+// Netflix Eureka Discovery Server for Service Registration and Discovery.
+//
+// It runs as a standalone application and listens on a Tomcat port as per
+// its configuration settings.
+// ------------------------------------------
+
 // This is to tell Boot to disable auto configuration of Data sources. The
 // other way to do the same thing is to turn it off via a configuration setting. If 
 // that is done, looks like it is no longer required to do it here. But leaving
@@ -8,14 +19,6 @@ package com.kd.registration;
 // import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 // import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 // @SpringBootApplication(exclude = { HibernateJpaAutoConfiguration.class, DataSourceAutoConfiguration.class })
-
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.SpringApplication;
-import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
-
-// Start Netflix Eureka Server for Service Registration and Discovery.
-// It runs as a standalone application and listens on a Tomcat port as per
-// its configuration settings.
 
 // Disable Security and Actuator Security, so that services don't need to authenticate to register
 // Also disable Reactive Webflux load balancer auto configuration (I think)

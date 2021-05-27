@@ -8,12 +8,35 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-//import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-//import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-//import org.springframework.http.HttpStatus;
+
+// ------------------------------------------
+// There are two main flows that are required for Authentication:
+// 1. Authenticate credentials and generate a JWT token
+// 2. Validate a JWT token so that the incoming request can be sent through
+//
+// The #1 flow is executed in two cases for Web UI:
+// 1a. Form-based login, after we authenticate the username/password credentials POSTed as Form parameters
+// 1b. Oauth-based login, after a successful Oauth authentication has happened
+//
+// The #1 flow is also executed for REST API clients:
+// 1c. REST API login, after we authenticate the username/password credentials POSTED as JSON body
+//
+// The #2 flow is executed for all subsequent requests to both
+// 2a. Web UI and 
+// 2b. REST services
+//
+// During the #1 flow, a JWT token is created and sent back with the response.
+// 1a and 1b. JWT token is sent back as a 'jwt' cookie
+// 1c. JWT token is sent back as a Response Authorization Header
+//
+// During #2 flow, the JWT token is extracted from the incoming request, decrypted and validated
+// 2a. Web UI - Extracted from a 'jwt' cookie
+// 2b. REST services - Extracted from a Request Authorization Header
+// ------------------------------------------
+
 
 // ------------------------------------------
 // Configuration Settings for all Security in the app

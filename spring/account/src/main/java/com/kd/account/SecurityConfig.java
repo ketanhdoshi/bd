@@ -17,13 +17,16 @@ import reactor.core.publisher.Mono;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+	// Custom filter for checking JWT Authorization Header
 	@Autowired
 	private JwtAuthorisationWebFilter customJwtAuthorisationFilter;
 
+	// Custom entry point for authentication errors
 	@Autowired
 	private JwtServerAuthenticationEntryPoint customJwtEntryPoint;
 
 	// ------------------------------------------
+	// All REST APIs are secured and must be authenticated by passing in a JWT Token in the Authorization Request Header
 	// ------------------------------------------
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {

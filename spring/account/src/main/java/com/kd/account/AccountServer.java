@@ -4,6 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
+// ------------------------------------------
+// Account Microservice
+//
+// Is fully Reactive and makes Reactive calls to the SQL database
+// ------------------------------------------
+
 // Disable Reactive Webflux load balancer auto configuration
 // Also disable Security auto-configuration - so that it doesn't create a default user in the in-memory db
 @SpringBootApplication (exclude = {

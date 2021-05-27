@@ -11,6 +11,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
+// ------------------------------------------
+// Front-end web server for the UI.
+//
+// End Users cannot interact directly with any of the back-end microservices as they are
+// not exposed externally. Their only entry is through the Web UI served by this front-end
+// server. It then internally makes calls to the back-end microservices, passes them the
+// security credentials as JWT Tokens in the Authorization Header.
+//
+// This web server is MVC Servlet based. But it makes Reactive WebClient calls to the
+// backend microservices.
+// ------------------------------------------
+
 // Disable auto-configuration of Repository beans
 // Also disable Reactive Webflux load balancer auto configuration (I think)
 @SpringBootApplication(exclude = { 
@@ -35,11 +47,13 @@ public class WebServer {
         SpringApplication.run(WebServer.class, args);
     }
 
-    // Because we have turned off ComponentScan above, we have to define these methods
-    // below to explicitly create and instantiate these Beans. By default, ComponentScan
-    // is turned on, and Spring Boot automatically scans all packages and finds and
-    // auto-instantatiates these Beans.
+    // By default with Spring Boot, ComponentScan is turned on, and Spring Boot automatically 
+    // scans all packages and finds and auto-instantatiates these Beans. However we have
+    // turned off ComponentScan above. Because of that we have to define these methods
+    // below to explicitly create and instantiate these Beans.  This means that any time we 
+    // add any Beans such as Controllers/Services, we have to explicitly add a method for them here.
 
+    // RestTemplate is used to make MVC Servlet client calls to backend services
     // The RestTemplate bean will be intercepted and auto-configured by Spring Cloud (due
     // to the @LoadBalanced annotation) to use a custom HttpRequestClient that uses Netflix
     // Ribbon to do the microservice lookup. Ribbon is also a load-balancer so if you have 
@@ -52,16 +66,12 @@ public class WebServer {
         return new RestTemplate();
     }
 
+    // WebClient is used to make Reactive Webflux client calls to backend services
     @Bean
     @LoadBalanced
     public WebClient.Builder getWebClient(){
         return WebClient.builder();
     }
-
-/*     @Bean
-    public WebClient webClient(WebClient.Builder builder) {
-        return builder.build();
-    } */
 
     /**
      * The AccountService encapsulates the interaction with the micro-service.

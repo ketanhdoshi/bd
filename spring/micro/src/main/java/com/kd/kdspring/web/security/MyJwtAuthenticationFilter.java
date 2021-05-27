@@ -18,6 +18,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.http.HttpHeaders;
 
+// ------------------------------------------
+// Web UI Clients use Form-based login which POSTs username/password as Form parameters. Here we use 
+// those credentials to authenticate the user and generate a JWT token which is returned 
+// in the HTTP Response as a Cookie.
+// ------------------------------------------
+
+
 public class MyJwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	
 	// ------------------------------------------

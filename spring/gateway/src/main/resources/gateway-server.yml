@@ -17,6 +17,8 @@ spring:
           lower-case-service-id: true
       routes:
       # Account Service
+      # Any incoming URLs that match the 'predicates' should be forwarded to
+      # the service in the 'uri', with the same predicates appended
       - id: account-service
         uri: lb://account-service
         predicates:

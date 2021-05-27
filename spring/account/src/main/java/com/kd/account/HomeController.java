@@ -9,6 +9,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
+// ------------------------------------------
+// REST Controller for some path. Doesn't do anything useful, is there just for demo
+// purposes.
+// NB: May not work any more, need to update it to return a Reactive result
+// ------------------------------------------
+
 @RestController
 public class HomeController {
 
@@ -26,6 +32,7 @@ public class HomeController {
 			roles = authorities.stream().map(GrantedAuthority::getAuthority).collect(joining(","));
 		}
 
+		// Return a string by concatenating the username with the list of authorities.
 		return "Accounts Home:" + username + "," + roles;
 	}
 

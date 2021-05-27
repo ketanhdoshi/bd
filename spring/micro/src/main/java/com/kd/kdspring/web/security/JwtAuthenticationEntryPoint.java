@@ -14,8 +14,13 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// Return a 401 unauthorized error to clients that try to access a protected resource 
-// without proper authentication
+// ------------------------------------------
+// Custom EntryPoint to return an HTTP error to the user during the Authentication flow.
+// We are not using this in the Web UI.
+// 
+// This returns a 401 unauthorized error to clients that try to access a protected resource 
+// without proper authentication. 
+// ------------------------------------------
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
